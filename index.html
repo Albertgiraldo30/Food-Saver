@@ -175,6 +175,31 @@
     .boton-cerrar { border: 1px solid #a9b3a5; background: #fff; width: 36px; height: 36px; font-size: 1.4rem; line-height: 1; padding: 0; }
     .boton-cerrar:hover { background: var(--fondo); }
 
+    /* ===================== Acabado: transiciones (150-250 ms) y hover ===================== */
+    @keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes resaltar { from { box-shadow: 0 0 0 4px rgba(47, 125, 50, 0.6); } to { box-shadow: 0 0 0 0 rgba(47, 125, 50, 0); } }
+    @keyframes fondoModal { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes tarjetaModal { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+    @keyframes entrarToast { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+
+    .aparece { animation: aparecer 200ms ease-out; }
+    .resaltado { animation: aparecer 200ms ease-out, resaltar 1200ms ease-out 200ms; }
+    .confirmacion:not([hidden]) { animation: fondoModal 200ms ease-out; }
+    .confirmacion:not([hidden]) .caja-confirmacion { animation: tarjetaModal 200ms ease-out; }
+    .toast { animation: entrarToast 200ms ease-out; transition: opacity 200ms ease-in, transform 200ms ease-in; }
+    .toast.saliendo { opacity: 0; transform: translateX(16px); }
+
+    button { transition: background-color 150ms, border-color 150ms, box-shadow 150ms, transform 150ms; }
+    button:active { transform: scale(0.97); }
+    .boton:hover { box-shadow: 0 2px 8px rgba(47, 125, 50, 0.35); }
+    .boton-peligro:hover { background: var(--rojo-claro); border-color: var(--rojo); }
+    .ingrediente, .receta, .tarjeta-resumen { transition: box-shadow 200ms, transform 200ms; }
+    .ingrediente:hover, .receta:hover, .tarjeta-resumen:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); transform: translateY(-1px); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+    }
+
     /* Oculto visualmente pero legible por lectores de pantalla */
     .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
@@ -388,6 +413,11 @@
       return p;
     }
 
+    // Para animar solo lo nuevo (y no todo en cada cambio) y resaltar lo recién agregado o editado.
+    let idsAnteriores = null;      // ids de ingredientes del render anterior (null = primera vez)
+    let recetasAnteriores = null;  // ids de recetas sugeridas del render anterior
+    let resaltarId = null;         // id del ingrediente a resaltar en el próximo render
+
     // Fila de ingrediente: nombre + etiqueta de estado (texto, no solo color), detalle y botones.
     function crearFila(ing) {
       const estado = estadoDe(ing);
@@ -395,6 +425,9 @@
       // Colores: vencido (rojo), próximo 0 a 3 días (naranja), ok (verde); siempre con etiqueta de texto.
       const clase = estado === 'normal' ? 'ok' : estado;
       li.className = 'ingrediente ' + clase + (ing.id === editandoId ? ' editando' : '');
+      li.dataset.id = ing.id;
+      if (ing.id === resaltarId) li.classList.add('resaltado');
+      else if (!idsAnteriores || !idsAnteriores.has(ing.id)) li.classList.add('aparece');
 
       const info = document.createElement('div');
       info.className = 'info';
@@ -437,6 +470,7 @@
       for (const ev of sugeridas) {
         const tarjeta = document.createElement('article');
         tarjeta.className = 'receta' + (ev.usaProximo ? ' urgente' : '');
+        if (!recetasAnteriores || !recetasAnteriores.has(ev.receta.id)) tarjeta.classList.add('aparece');
         tarjeta.appendChild(crearTexto('h3', ev.receta.nombre));
         if (ev.usaProximo) {
           const p = document.createElement('p');
@@ -469,6 +503,16 @@
       document.getElementById('resumen-pronto').textContent = r.pronto;
       document.getElementById('resumen-vencidos').textContent = r.vencidos;
       document.getElementById('resumen-recetas').textContent = r.recetas;
+
+      // Lleva a la vista la fila resaltada (recién agregada o editada).
+      const resaltada = resaltarId && document.querySelector('.ingrediente[data-id="' + resaltarId + '"]');
+      if (resaltada) {
+        const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        resaltada.scrollIntoView({ block: 'nearest', behavior: reducir ? 'auto' : 'smooth' });
+      }
+      idsAnteriores = new Set(despensa.map(i => i.id));
+      recetasAnteriores = new Set(sugerirRecetas(despensa, recetas).map(ev => ev.receta.id));
+      resaltarId = null;
     }
 
     /* ===================== Formularios (agregar y editar) ===================== */
@@ -546,6 +590,7 @@
       toast.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
       zonaToasts.appendChild(toast);
       while (zonaToasts.children.length > 3) zonaToasts.firstChild.remove(); // máximo 3 a la vez
+      setTimeout(() => toast.classList.add('saliendo'), DURACION_TOAST - 200); // se desvanece en 200 ms
       setTimeout(() => toast.remove(), DURACION_TOAST);
     }
 
@@ -571,7 +616,7 @@
         notificarErrores(resultado.errores);
         return;
       }
-      agregarIngrediente(despensa, resultado.datos);
+      resaltarId = agregarIngrediente(despensa, resultado.datos).id; // nueva o la que se sumó
       const guardo = guardar();
       form.reset();
       alta.limpiarErrores();
@@ -664,6 +709,7 @@
       const ing = despensa.find(i => i.id === editandoId);
       if (ing) Object.assign(ing, resultado.datos);
       const guardo = guardar();
+      resaltarId = editandoId;
       cerrarEdicion();
       if (guardo) notificar('Cambios guardados', 'exito');
     });
