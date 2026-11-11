@@ -141,6 +141,11 @@
     .tarjeta-resumen.recetas .cifra { color: var(--verde); }
     @media (max-width: 520px) { .tarjeta-resumen { padding: 10px; font-size: 0.85rem; } .tarjeta-resumen .cifra { font-size: 1.5rem; } }
 
+    /* Aviso breve "Guardado" junto al botón */
+    .acciones-form { align-items: center; }
+    .guardado { color: var(--verde); font-weight: 700; }
+    .guardado:empty { display: none; }
+
     /* Confirmación en la página */
     .pie-panel { margin-top: 12px; display: flex; justify-content: flex-end; }
     .confirmacion {
@@ -217,6 +222,7 @@
           <div class="acciones-form">
             <button type="submit" id="boton-enviar" class="boton">Agregar</button>
             <button type="button" id="boton-cancelar" class="boton-secundario" hidden>Cancelar</button>
+            <span id="estado-guardado" class="guardado" role="status" aria-live="polite"></span>
           </div>
         </form>
       </section>
@@ -259,8 +265,10 @@
     function guardar() {
       try {
         localStorage.setItem(CLAVE, serializar(despensa, recetas));
+        return true;
       } catch (e) {
         mostrarAviso('No se pudieron guardar los cambios en este navegador. Se perderán al recargar.');
+        return false;
       }
     }
 
@@ -419,6 +427,15 @@
     const botonCancelar = document.getElementById('boton-cancelar');
     const tituloFormulario = document.getElementById('titulo-formulario');
 
+    // Aviso breve junto al botón ("Guardado" / "Eliminado"); se borra solo a los 4 segundos.
+    const estadoGuardado = document.getElementById('estado-guardado');
+    let temporizadorGuardado = null;
+    function mostrarGuardado(texto) {
+      estadoGuardado.textContent = texto;
+      clearTimeout(temporizadorGuardado);
+      temporizadorGuardado = setTimeout(() => { estadoGuardado.textContent = ''; }, 4000);
+    }
+
     let editandoId = null; // id del ingrediente que se está editando, o null si se está agregando
 
     // Campo de cada error que devuelve validarIngrediente (en el orden del formulario).
@@ -486,9 +503,10 @@
       } else {
         agregarIngrediente(despensa, datos);
       }
-      guardar();
+      const guardo = guardar();
       salirDeEdicion();
       render();
+      if (guardo) mostrarGuardado('Guardado');
       campoNombre.focus();
     });
 
@@ -506,10 +524,16 @@
       if (!ing) return;
 
       if (boton.dataset.accion === 'eliminar') {
-        despensa = despensa.filter(i => i.id !== ing.id);
-        guardar();
-        if (editandoId === ing.id) salirDeEdicion();
-        render();
+        pedirConfirmacion(
+          '¿Eliminar "' + ing.nombre + '" (' + formatoCantidad(ing.cantidad, ing.unidad) + ')?',
+          'Sí, eliminar',
+          () => {
+            despensa = despensa.filter(i => i.id !== ing.id);
+            const guardo = guardar();
+            if (editandoId === ing.id) salirDeEdicion();
+            render();
+            if (guardo) mostrarGuardado('Eliminado');
+          });
       } else if (boton.dataset.accion === 'editar') {
         CAMPOS.forEach(limpiarError);
         editandoId = ing.id;
