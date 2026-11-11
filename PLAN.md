@@ -270,7 +270,7 @@ Tres encargos separados, en este orden.
 - [ ] Límites de fecha: hoy y +5 son próximos; +6 es normal; -1 es vencido; hoy + 5 años + 1 día es error.
 - [ ] Conversiones: leche `1 tazas` frente a 500 ml es faltante; `3 tazas` es disponible; aceite `2 cucharadas` frente a 30 ml es disponible.
 - [ ] Cantidad insuficiente: con 1 tomate, "Pasta con salsa de tomate" se muestra, tomate como faltante "no alcanza", y cuenta para la urgencia.
-- [ ] Normalización: "Tomates", " TOMATE " y "tomáte" cuentan como tomate.
+- [ ] Normalización: "Tomates", " TOMATE " y "tomáte" cuentan como tomate; "Limones" cuenta como limón.
 - [ ] `README.md`: cómo abrir, cómo usar y cómo borrar los datos para empezar de cero.
 - [ ] `PROCESO.md`: los 3 ejemplos (se anotan durante el trabajo, no al final).
 - [ ] Probar en el navegador de la demo. Commit final y copia.
@@ -331,3 +331,4 @@ Respuestas a las preguntas que dejó el arquitecto:
 9. **R8:** activo solo sin faltantes; descuenta desde la fila que vence primero; elimina la fila que queda en 0.
 10. **Límite de fecha:** máximo hoy + 5 años.
 11. **Carpeta:** se queda en `C:\Users\sofia\Desktop\Concurso IA`.
+12. **Plurales en "es":** también se quitan ("Limones" = "limón"). Se compara con `mismoNombre(a, b)`, que prueba quitando "s" y quitando "es".

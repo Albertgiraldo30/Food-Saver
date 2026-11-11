@@ -17,7 +17,7 @@ R7. Los datos NO se pierden al recargar la página (localStorage).
 R8 (P2, solo si sobra tiempo). Botón "Cocinar esta receta": activo solo si no hay faltantes; descuenta empezando por la fila que vence primero; elimina la fila que queda en 0.
 
 ## Reglas de comparación
-- Nombres: ignorar mayúsculas, tildes, espacios extra y la "s" final ("Tomates" = "tomate").
+- Nombres: ignorar mayúsculas, tildes, espacios extra y el plural: "s" final ("Tomates" = "tomate") o "es" final ("Limones" = "limón"). Se comparan con `mismoNombre(a, b)`.
 - Unidades permitidas (selector): unidades, g, kg, ml, l, tazas, cucharadas, libras.
 - Conversiones: 1 kg = 1000 g; 1 libra = 500 g (libra colombiana); 1 l = 1000 ml; 1 taza = 240 ml; 1 cucharada = 15 ml.
 - Peso (g, kg, libras) solo con peso; volumen (ml, l, tazas, cucharadas) solo con volumen; "unidades" solo con "unidades". No convertible → faltante.
