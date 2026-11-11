@@ -54,7 +54,9 @@ Plan propuesto por el subagente `arquitecto` y ajustado con las decisiones de la
 
 ```
 C:\Users\sofia\Desktop\Concurso IA\
-  index.html     App completa (único archivo de código)
+  index.html     Pantalla (HTML, CSS y JS del DOM)
+  logica.js      Funciones puras y constantes (sin DOM)
+  pruebas.js     Pruebas de logica.js: node pruebas.js
   README.md      Instrucciones breves de uso (entregable)
   PROCESO.md     Tres ejemplos de trabajo con el agente (entregable)
   PLAN.md        Este plan
@@ -333,3 +335,5 @@ Respuestas a las preguntas que dejó el arquitecto:
 11. **Carpeta:** se queda en `C:\Users\sofia\Desktop\Concurso IA`.
 12. **Plurales en "es":** también se quitan ("Limones" = "limón"). Se compara con `mismoNombre(a, b)`, que prueba quitando "s" y quitando "es".
 13. **Ingrediente que no alcanza (cambia la decisión 4):** la receta usa lo que hay ("tomate 1 de 3 unidades") y los demás ingredientes quedan igual; ya no cuenta como faltante "no alcanza". Sigue contando para mostrar la receta y para su urgencia. La tarjeta muestra "Usa:" con cantidades en lugar de "Tienes:".
+14. **Separar la lógica (pedido de la usuaria, tras la capa 2):** `logica.js` con las funciones puras y constantes, `pruebas.js` con los 23 casos de la capa 2 más los nuevos (`node pruebas.js`), e `index.html` solo con la pantalla. Reemplaza "un solo index.html" del stack.
+15. **Persistencia de recetas:** en la capa 3 se guardan en localStorage la despensa **y las recetas** (pedido de la usuaria). Si las recetas guardadas están dañadas, se usan las predefinidas.

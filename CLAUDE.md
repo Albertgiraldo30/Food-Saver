@@ -42,9 +42,10 @@ Recetas predefinidas (fijas en el código):
 8. Papas con huevo — papa 4 unidades, huevo 2 unidades, aceite 30 ml. Cocinar las papas en cubos, dorarlas y agregar los huevos.
 
 ## Stack (no cambiar)
-- Un solo index.html con HTML, CSS y JavaScript puro.
-- Sin librerías externas ni CDN.
-- Persistencia con localStorage.
+- index.html (pantalla: HTML, CSS y JavaScript del DOM) + logica.js (funciones puras y constantes, sin DOM ni localStorage) + pruebas.js (pruebas de logica.js, se ejecutan con `node pruebas.js`). Cambio pedido por la usuaria.
+- JavaScript puro, sin librerías externas ni CDN. logica.js se carga con un <script> normal (no módulo) para que funcione con doble clic.
+- Persistencia con localStorage (despensa y recetas).
+- Toda función pura nueva va en logica.js con su prueba en pruebas.js; `node pruebas.js` debe terminar sin fallas antes de cada commit.
 
 ## Validaciones obligatorias
 - No permitir campos vacíos (nombre, cantidad, unidad, fecha).
