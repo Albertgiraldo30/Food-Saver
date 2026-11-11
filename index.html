@@ -175,6 +175,18 @@
     .boton-cerrar { border: 1px solid #a9b3a5; background: #fff; width: 36px; height: 36px; font-size: 1.4rem; line-height: 1; padding: 0; }
     .boton-cerrar:hover { background: var(--fondo); }
 
+    /* Agotados y cocinar */
+    .ingrediente.agotado { border-left-color: #6b7280; background: #f1f2f0; }
+    .etiqueta.agotado { background: #4b5563; color: #fff; }
+    .acciones-receta { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .boton-chico:disabled { opacity: 0.55; cursor: not-allowed; }
+    .nota { color: var(--suave); font-size: 0.9rem; }
+    .caja-confirmacion .nota-modal { font-weight: 400; color: var(--suave); margin: 0 0 12px; }
+    .fila-uso { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 4px 12px; align-items: center; }
+    .fila-uso label { font-weight: 600; }
+    .fila-uso .ayuda { grid-column: 1 / -1; color: var(--suave); font-size: 0.9rem; }
+    .fila-uso .error { grid-column: 1 / -1; }
+
     /* ===================== Acabado: transiciones (150-250 ms) y hover ===================== */
     @keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
     @keyframes resaltar { from { box-shadow: 0 0 0 4px rgba(47, 125, 50, 0.6); } to { box-shadow: 0 0 0 0 rgba(47, 125, 50, 0); } }
@@ -265,6 +277,24 @@
       </div>
   </div>
 
+  <!-- Modal "Cociné esta receta": cantidad usada por ingrediente; descuenta de la despensa. -->
+  <div id="modal-cocinar" class="confirmacion" role="dialog" aria-modal="true" aria-labelledby="titulo-cocinar" hidden>
+    <div class="caja-confirmacion caja-modal">
+      <div class="cabecera-modal">
+        <h2 id="titulo-cocinar">Cociné esta receta</h2>
+        <button type="button" id="cocinar-cerrar" class="boton-cerrar" aria-label="Cerrar">&times;</button>
+      </div>
+      <p class="nota-modal">Ajusta la cantidad que usaste de cada ingrediente. Se descuenta primero lo que vence antes.</p>
+      <form id="form-cocinar" class="formulario" novalidate>
+        <div id="cocinar-items" class="formulario"></div>
+        <div class="acciones-form">
+          <button type="submit" id="cocinar-confirmar" class="boton">Confirmar</button>
+          <button type="button" id="cocinar-cancelar" class="boton-secundario">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <main class="tablero">
     <section class="resumen" aria-label="Resumen">
       <div class="tarjeta-resumen pronto"><span class="cifra" id="resumen-pronto">0</span><span>Vencen pronto (3 días o menos)</span></div>
@@ -318,6 +348,11 @@
       <section class="panel" id="seccion-vencidos" aria-labelledby="titulo-vencidos">
         <h2 id="titulo-vencidos">Vencidos <span class="contador" id="contador-vencidos"></span></h2>
         <ul class="lista" id="lista-vencidos"></ul>
+      </section>
+
+      <section class="panel" id="seccion-agotados" aria-labelledby="titulo-agotados">
+        <h2 id="titulo-agotados">Agotados <span class="contador" id="contador-agotados"></span></h2>
+        <ul class="lista" id="lista-agotados"></ul>
       </section>
     </div>
 
@@ -386,6 +421,7 @@
 
     const listaDespensa = document.getElementById('lista-despensa');
     const listaVencidos = document.getElementById('lista-vencidos');
+    const listaAgotados = document.getElementById('lista-agotados');
     const listaRecetas = document.getElementById('lista-recetas');
 
     function crearTexto(etiqueta, texto, clase) {
@@ -420,7 +456,7 @@
 
     // Fila de ingrediente: nombre + etiqueta de estado (texto, no solo color), detalle y botones.
     function crearFila(ing) {
-      const estado = estadoDe(ing);
+      const estado = filaAgotada(ing) ? 'agotado' : estadoDe(ing);
       const li = document.createElement('li');
       // Colores: vencido (rojo), próximo 0 a 3 días (naranja), ok (verde); siempre con etiqueta de texto.
       const clase = estado === 'normal' ? 'ok' : estado;
@@ -435,6 +471,7 @@
       if (estado === 'proximo') nombre.appendChild(crearTexto('span', 'Próximo', 'etiqueta proximo'));
       if (estado === 'vencido') nombre.appendChild(crearTexto('span', 'Vencido', 'etiqueta vencido'));
       if (estado === 'normal') nombre.appendChild(crearTexto('span', 'OK', 'etiqueta ok'));
+      if (estado === 'agotado') nombre.appendChild(crearTexto('span', 'Agotado', 'etiqueta agotado'));
       info.appendChild(nombre);
       const dias = diasPara(ing.vence);
       const vence = Number.isFinite(dias) ? textoVence(dias) + ' · ' + formatoFecha(ing.vence) : 'sin fecha';
@@ -490,14 +527,30 @@
         const falta = ev.faltantes.map(f => f.nombre + ' (' + f.motivo + ')').join(', ');
         tarjeta.appendChild(crearRenglon(falta ? 'falta' : 'falta nada', 'Te falta:', falta || 'nada'));
         tarjeta.appendChild(crearRenglon('preparacion', 'Preparación:', ev.receta.preparacion));
+        const accionesReceta = document.createElement('div');
+        accionesReceta.className = 'acciones-receta';
+        const botonCocinar = crearTexto('button', 'Cociné esta receta', 'boton-chico boton-cocinar');
+        botonCocinar.type = 'button';
+        botonCocinar.dataset.receta = ev.receta.id;
+        accionesReceta.appendChild(botonCocinar);
+        if (ev.faltantes.length > 0) {
+          // Solo se puede cocinar sin faltantes (decisión de la usuaria).
+          botonCocinar.disabled = true;
+          botonCocinar.setAttribute('aria-describedby', 'nota-cocinar-' + ev.receta.id);
+          const nota = crearTexto('span', 'Para cocinarla te faltan ingredientes.', 'nota');
+          nota.id = 'nota-cocinar-' + ev.receta.id;
+          accionesReceta.appendChild(nota);
+        }
+        tarjeta.appendChild(accionesReceta);
         listaRecetas.appendChild(tarjeta);
       }
     }
 
     function render() {
-      const { vigentes, vencidos } = separarVencidos(despensa);
+      const { vigentes, vencidos, agotados } = separarVencidos(despensa);
       pintarLista(listaDespensa, document.getElementById('contador-despensa'), vigentes, 'No hay ingredientes.');
       pintarLista(listaVencidos, document.getElementById('contador-vencidos'), vencidos, 'No hay ingredientes vencidos.');
+      pintarLista(listaAgotados, document.getElementById('contador-agotados'), agotados, 'No hay ingredientes agotados.');
       pintarRecetas();
       const r = resumen(despensa, recetas);
       document.getElementById('resumen-pronto').textContent = r.pronto;
@@ -749,6 +802,97 @@
     botonConfirmarNo.addEventListener('click', cerrarConfirmacion);
     confirmacion.addEventListener('click', e => { if (e.target === confirmacion) cerrarConfirmacion(); });
 
+    /* ----- Modal "Cociné esta receta" ----- */
+
+    const modalCocinar = document.getElementById('modal-cocinar');
+    const formCocinar = document.getElementById('form-cocinar');
+    const itemsCocinar = document.getElementById('cocinar-items');
+    let cocina = null; // resultado de prepararCocina para la receta abierta
+
+    function abrirCocinar(receta) {
+      cocina = prepararCocina(receta, despensa);
+      if (!cocina.puedeCocinar) return; // el botón ya está desactivado; doble seguridad
+      document.getElementById('titulo-cocinar').textContent = 'Cociné: ' + receta.nombre;
+      itemsCocinar.replaceChildren();
+      cocina.items.forEach((it, i) => {
+        const fila = document.createElement('div');
+        fila.className = 'fila-uso';
+        const label = crearTexto('label', it.nombre + ' (' + nombreUnidad(it.unidad) + ')');
+        label.htmlFor = 'cocinar-uso-' + i;
+        const input = document.createElement('input');
+        input.id = 'cocinar-uso-' + i;
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.autocomplete = 'off';
+        input.value = it.usadaInicial;
+        input.setAttribute('aria-describedby', 'cocinar-ayuda-' + i + ' cocinar-error-' + i);
+        const ayuda = crearTexto('span', 'Sugerida: ' + formatoCantidad(it.sugerida, it.unidad) +
+          ' · Tienes: ' + formatoCantidad(it.disponible, it.unidad), 'ayuda');
+        ayuda.id = 'cocinar-ayuda-' + i;
+        const error = crearTexto('span', '', 'error');
+        error.id = 'cocinar-error-' + i;
+        error.setAttribute('aria-live', 'polite');
+        input.addEventListener('input', () => { error.textContent = ''; input.classList.remove('invalido'); input.removeAttribute('aria-invalid'); });
+        fila.append(label, input, ayuda, error);
+        itemsCocinar.appendChild(fila);
+      });
+      abrirModal(modalCocinar, document.getElementById('cocinar-uso-0'));
+    }
+
+    function cerrarCocinar() {
+      cocina = null;
+      cerrarModal(modalCocinar);
+    }
+    modalCocinar.cerrar = cerrarCocinar;
+
+    formCocinar.addEventListener('submit', evento => {
+      evento.preventDefault();
+      if (!cocina) return;
+      const usos = [];
+      let primero = null;
+      cocina.items.forEach((it, i) => {
+        const input = document.getElementById('cocinar-uso-' + i);
+        const error = document.getElementById('cocinar-error-' + i);
+        const r = validarUso(input.value, it.disponible, it.unidad);
+        if (r.ok) {
+          error.textContent = '';
+          input.classList.remove('invalido');
+          input.removeAttribute('aria-invalid');
+          usos.push({ nombre: it.nombre, cantidad: r.valor, unidad: it.unidad });
+        } else {
+          error.textContent = r.error;
+          input.classList.add('invalido');
+          input.setAttribute('aria-invalid', 'true');
+          if (!primero) primero = input;
+        }
+      });
+      if (primero) {
+        primero.focus();
+        notificar('Revisa las cantidades usadas', 'error');
+        return;
+      }
+      const idReceta = cocina.receta.id;
+      cocinarReceta(despensa, usos);
+      const guardo = guardar();
+      cerrarCocinar();
+      render();
+      if (guardo) notificar('Inventario actualizado', 'exito');
+      // La tarjeta se volvió a dibujar: el foco vuelve a su botón (o al formulario si ya no se puede cocinar).
+      const otraVez = document.querySelector('.boton-cocinar[data-receta="' + idReceta + '"]:not(:disabled)');
+      (otraVez || campoNombre).focus();
+    });
+
+    document.getElementById('cocinar-cancelar').addEventListener('click', cerrarCocinar);
+    document.getElementById('cocinar-cerrar').addEventListener('click', cerrarCocinar);
+    modalCocinar.addEventListener('click', e => { if (e.target === modalCocinar) cerrarCocinar(); });
+
+    listaRecetas.addEventListener('click', e => {
+      const boton = e.target.closest('button.boton-cocinar');
+      if (!boton || boton.disabled) return;
+      const receta = recetas.find(r => String(r.id) === boton.dataset.receta);
+      if (receta) abrirCocinar(receta);
+    });
+
     /* ===================== Botones de las listas ===================== */
 
     // Editar / Eliminar (delegación de eventos).
@@ -775,6 +919,7 @@
     }
     listaDespensa.addEventListener('click', alHacerClicEnLista);
     listaVencidos.addEventListener('click', alHacerClicEnLista);
+    listaAgotados.addEventListener('click', alHacerClicEnLista);
 
     // Restaurar la despensa de ejemplo (fechas relativas a hoy) y las recetas predefinidas.
     document.getElementById('boton-restaurar').addEventListener('click', () => {

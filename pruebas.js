@@ -190,6 +190,48 @@ L.agregarIngrediente(rDemo, { nombre: 'limón', cantidad: 2, unidad: 'unidades',
 const rd = L.resumen(rDemo);
 check('demo (aguacate hoy, limón ayer) => 5 pronto, 2 vencidos, 7 recetas', rd.pronto === 5 && rd.vencidos === 2 && rd.recetas === 7);
 
+seccion('Paso 2: cocinar receta (R8)');
+const pericos = L.RECETAS[0]; // huevo 3, tomate 1, cebolla 1, aceite 15 ml
+const usosDe = (prep, cambios = {}) => prep.items.map(it => ({ nombre: it.nombre, unidad: it.unidad,
+  cantidad: cambios[it.nombre] !== undefined ? cambios[it.nombre] : it.usadaInicial }));
+const cant = (lista, n) => lista.find(i => i.nombre === n).cantidad;
+let dc = semilla(); let prep = L.prepararCocina(pericos, dc);
+check('prepararCocina: Huevos pericos se puede cocinar, sugeridas y disponibles', prep.puedeCocinar &&
+  prep.items.map(i => i.nombre + ' ' + i.sugerida + '/' + i.disponible).join() === 'huevo 3/12,tomate 1/4,cebolla 1/3,aceite 15/1000');
+L.cocinarReceta(dc, usosDe(prep));
+check('descuento exacto: huevo 12->9, tomate 4->3, cebolla 3->2, aceite 1 l -> 0.99 l',
+  cant(dc, 'Huevo') === 9 && cant(dc, 'Tomate') === 3 && cant(dc, 'Cebolla') === 2 && cant(dc, 'Aceite') === 0.99);
+dc = semilla(); L.cocinarReceta(dc, usosDe(L.prepararCocina(pericos, dc), { huevo: 5 }));
+check('descuento mayor a lo sugerido: 5 huevos => 12->7', cant(dc, 'Huevo') === 7);
+dc = semilla(); L.cocinarReceta(dc, usosDe(L.prepararCocina(pericos, dc), { huevo: 1, cebolla: 0 }));
+check('descuento menor y 0: 1 huevo => 11, cebolla 0 => sigue 3', cant(dc, 'Huevo') === 11 && cant(dc, 'Cebolla') === 3);
+check('no negativos: validarUso rechaza más de lo disponible y negativos',
+  !L.validarUso('13', 12, 'unidades').ok && L.validarUso('13', 12, 'unidades').error === 'Solo tienes 12 unidades.' &&
+  !L.validarUso('-1', 12, 'unidades').ok && L.validarUso('0', 12, 'unidades').ok && L.validarUso('1,5', 12, 'unidades').valor === 1.5);
+dc = semilla(); const sobra = L.cocinarReceta(dc, [{ nombre: 'huevo', cantidad: 20, unidad: 'unidades' }]);
+check('no negativos aunque se pida de más: huevo queda en 0 (Agotado) y se informa lo no descontado',
+  cant(dc, 'Huevo') === 0 && sobra.length === 1 && sobra[0].cantidad === 8);
+check('agotado: va a la sección Agotados, no a Despensa ni Vencidos', (() => { const s = L.separarVencidos(dc);
+  return s.agotados.length === 1 && s.agotados[0].nombre === 'Huevo' && !s.vigentes.some(i => i.nombre === 'Huevo'); })());
+check('agotado: se guarda y se recarga (no se descarta)', (() => { const d = L.deserializar(L.serializar(dc, L.RECETAS));
+  return d.descartados === 0 && d.ingredientes.find(i => i.nombre === 'Huevo').cantidad === 0; })());
+check('agotado: la receta lo marca como faltante "agotado" y ya no se puede cocinar', (() => { const p2 = L.prepararCocina(pericos, dc);
+  return !p2.puedeCocinar && p2.faltantes.some(f => f.nombre === 'huevo' && f.motivo === 'agotado'); })());
+dc = semilla(); L.cocinarReceta(dc, [{ nombre: 'leche', cantidad: 1, unidad: 'tazas' }]);
+check('conversión taza->ml: 1 taza de leche sobre 1 l => 0.76 l', cant(dc, 'Leche') === 0.76);
+dc = [{ id: 't', nombre: 'leche', cantidad: 3, unidad: 'tazas', vence: sumarDias(hoyISO(), 5) }];
+L.cocinarReceta(dc, [{ nombre: 'leche', cantidad: 480, unidad: 'ml' }]);
+check('conversión ml->taza: 480 ml sobre 3 tazas => 1 taza', dc[0].cantidad === 1);
+dc = [{ id: 'a', nombre: 'huevo', cantidad: 2, unidad: 'unidades', vence: sumarDias(hoyISO(), 10) },
+      { id: 'b', nombre: 'huevo', cantidad: 2, unidad: 'unidades', vence: sumarDias(hoyISO(), 1) },
+      { id: 'c', nombre: 'huevo', cantidad: 5, unidad: 'unidades', vence: sumarDias(hoyISO(), -1) }];
+L.cocinarReceta(dc, [{ nombre: 'huevo', cantidad: 3, unidad: 'unidades' }]);
+check('gasta primero lo que vence antes y nunca usa vencidos', dc[1].cantidad === 0 && dc[0].cantidad === 1 && dc[2].cantidad === 5);
+check('receta con faltantes no se puede cocinar (Pasta: queso vencido)', !L.prepararCocina(L.RECETAS[2], semilla()).puedeCocinar);
+check('parcial: usada inicial = lo disponible (1 tomate de 3)', (() => { const p3 = L.prepararCocina(L.RECETAS[2],
+  [{ id: 'x', nombre: 'tomate', cantidad: 1, unidad: 'unidades', vence: sumarDias(hoyISO(), 2) }]);
+  return p3.items.find(i => i.nombre === 'tomate').usadaInicial === 1; })());
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);

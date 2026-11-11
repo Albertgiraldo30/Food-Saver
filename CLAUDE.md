@@ -15,7 +15,7 @@ R5. Sugerir recetas que usan al menos 1 ingrediente presente y no vencido (aunqu
 R6. Para cada receta: mostrar lo que usa y los faltantes. Faltante = no está, solo está vencido o unidad no compatible. La cantidad disponible es la suma (convertida) de todas las filas no vencidas de ese ingrediente. Si un ingrediente está pero NO alcanza, la receta usa lo que hay ("tomate 1 de 3 unidades"), no cuenta como faltante y los demás ingredientes quedan igual.
 R7. Los datos NO se pierden al recargar la página (localStorage).
 R9. Botón "Restaurar datos de ejemplo" con confirmación en la página: carga la despensa de ejemplo (fechas relativas a hoy) y las recetas predefinidas, y lo guarda.
-R8 (P2, solo si sobra tiempo). Botón "Cocinar esta receta": activo solo si no hay faltantes; descuenta empezando por la fila que vence primero; elimina la fila que queda en 0.
+R8. "Cociné esta receta" (decisión 20): botón en cada tarjeta, activo solo si la receta no tiene faltantes. Abre un modal con cada ingrediente, su cantidad sugerida, lo disponible y un campo "Cantidad usada" (0 hasta lo disponible). Al confirmar descuenta de la despensa empezando por la fila que vence primero, convirtiendo unidades, sin usar vencidos y sin dejar negativos: la fila que llega a 0 queda "Agotada" (sección aparte, no cuenta para recetas). Toast "Inventario actualizado".
 
 ## Reglas de comparación
 - Nombres: ignorar mayúsculas, tildes, espacios extra y el plural: "s" final ("Tomates" = "tomate") o "es" final ("Limones" = "limón"). Se comparan con `mismoNombre(a, b)`.

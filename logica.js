@@ -319,11 +319,19 @@ function ordenarPorVencimiento(lista) {
 }
 
 // Separa la despensa ordenada en vigentes (no vencidos) y vencidos.
+// Agotado: fila con cantidad 0 (quedó así al cocinar). No cuenta para recetas ni para el resumen.
+function filaAgotada(ing) {
+  return Boolean(ing) && ing.cantidad === 0 && Boolean(UNIDADES[ing.unidad]) && /^\d{4}-\d{2}-\d{2}$/.test(ing.vence);
+}
+
+// Separa la despensa ordenada en vigentes, vencidos y agotados (los agotados van aparte aunque estén vencidos).
 function separarVencidos(lista) {
   const ordenada = ordenarPorVencimiento(lista);
+  const conCantidad = ordenada.filter(ing => !filaAgotada(ing));
   return {
-    vigentes: ordenada.filter(ing => estadoDe(ing) !== 'vencido'),
-    vencidos: ordenada.filter(ing => estadoDe(ing) === 'vencido')
+    vigentes: conCantidad.filter(ing => estadoDe(ing) !== 'vencido'),
+    vencidos: conCantidad.filter(ing => estadoDe(ing) === 'vencido'),
+    agotados: ordenada.filter(filaAgotada)
   };
 }
 
@@ -373,7 +381,8 @@ function evaluarReceta(receta, lista) {
 
     if (compatibles.length === 0) {
       let motivo = 'no está';
-      if (filas.length > 0 && noVencidas.length === 0) motivo = 'vencido';
+      if (filas.length === 0 && lista.some(ing => filaAgotada(ing) && mismoNombre(ing.nombre, req.nombre))) motivo = 'agotado';
+      else if (filas.length > 0 && noVencidas.length === 0) motivo = 'vencido';
       else if (noVencidas.length > 0) motivo = 'unidad no compatible';
       faltantes.push({ nombre: req.nombre, motivo });
       continue;
@@ -426,6 +435,62 @@ function resumen(lista, recetas = RECETAS) {
   };
 }
 
+/* ===================== Cocinar receta (R8) ===================== */
+
+// Filas que se pueden gastar para un ingrediente: válidas, no vencidas, mismo nombre y tipo de unidad,
+// ordenadas por la que vence primero.
+function filasParaUsar(lista, nombre, unidad) {
+  const tipo = UNIDADES[unidad].tipo;
+  return ordenarPorVencimiento(lista.filter(ing =>
+    filaValida(ing) && diasPara(ing.vence) >= 0 &&
+    mismoNombre(ing.nombre, nombre) && UNIDADES[ing.unidad].tipo === tipo));
+}
+
+// Datos para el modal de cocinar: por cada ingrediente de la receta, la cantidad sugerida, lo que
+// hay disponible (en la unidad de la receta) y una cantidad usada inicial (la sugerida, o lo que haya).
+// Solo se puede cocinar si la receta no tiene faltantes.
+function prepararCocina(receta, lista) {
+  const ev = evaluarReceta(receta, lista);
+  const items = receta.ingredientes.map(req => {
+    const base = filasParaUsar(lista, req.nombre, req.unidad)
+      .reduce((s, ing) => s + aBase(ing.cantidad, ing.unidad).valor, 0);
+    const disponible = redondear(base / UNIDADES[req.unidad].factor);
+    return { nombre: req.nombre, unidad: req.unidad, sugerida: req.cantidad, disponible,
+             usadaInicial: Math.min(req.cantidad, disponible) };
+  });
+  return { receta, items, puedeCocinar: ev.faltantes.length === 0, faltantes: ev.faltantes };
+}
+
+// Valida la "Cantidad usada" de un ingrediente: número de 0 a lo disponible (nunca deja negativos).
+function validarUso(texto, disponible, unidad) {
+  const limpio = String(texto == null ? '' : texto).trim().replace(',', '.');
+  if (limpio === '') return { ok: false, error: 'Escribe la cantidad usada (0 si no usaste).' };
+  if (!/^\d+(\.\d+)?$/.test(limpio)) return { ok: false, error: 'La cantidad usada debe ser un número de 0 o más.' };
+  const valor = redondear(Number(limpio));
+  if (valor > disponible + 1e-9) return { ok: false, error: 'Solo tienes ' + formatoCantidad(disponible, unidad) + '.' };
+  return { ok: true, valor };
+}
+
+// Descuenta de la despensa lo usado (la modifica). usos: [{ nombre, cantidad, unidad }].
+// Gasta primero la fila que vence antes, convierte unidades, nunca usa filas vencidas y nunca deja
+// cantidades negativas: la fila que llega a 0 queda "Agotada". Devuelve lo que no se pudo descontar.
+function cocinarReceta(lista, usos) {
+  const sinDescontar = [];
+  for (const uso of usos) {
+    if (!(uso.cantidad > 0) || !UNIDADES[uso.unidad]) continue;
+    let resta = aBase(uso.cantidad, uso.unidad).valor;
+    for (const fila of filasParaUsar(lista, uso.nombre, uso.unidad)) {
+      if (resta <= 1e-9) break;
+      const factor = UNIDADES[fila.unidad].factor;
+      const tomado = Math.min(fila.cantidad * factor, resta);
+      fila.cantidad = Math.max(0, redondear(fila.cantidad - tomado / factor));
+      resta -= tomado;
+    }
+    if (resta > 1e-9) sinDescontar.push({ nombre: uso.nombre, cantidad: redondear(resta / UNIDADES[uso.unidad].factor), unidad: uso.unidad });
+  }
+  return sinDescontar;
+}
+
 /* ===================== Persistencia (parte pura) ===================== */
 
 // Texto que se guarda en localStorage.
@@ -436,7 +501,7 @@ function serializar(ingredientes, recetas) {
 // Fila de despensa leída de localStorage: id y nombre de texto + filaValida (unidad, fecha, cantidad).
 function filaGuardadaValida(i) {
   return Boolean(i) && typeof i.id === 'string' && typeof i.nombre === 'string' &&
-    i.nombre.trim() !== '' && filaValida(i);
+    i.nombre.trim() !== '' && (filaValida(i) || filaAgotada(i));
 }
 
 // Receta leída de localStorage: nombre y preparación de texto, y cada ingrediente con
@@ -479,7 +544,7 @@ if (typeof module !== 'undefined' && module.exports) {
     hoyISO, sumarDias, diasPara, estadoDe, textoVence,
     redondear, aBase, convertir, validarCantidad, NOMBRES_UNIDAD, nombreUnidad, formatoCantidad, formatoFecha,
     ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
-    nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
+    nuevoId, crearSemilla, filaValida, filaAgotada, filasParaUsar, prepararCocina, validarUso, cocinarReceta, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas, resumen,
     filaGuardadaValida, recetaValida, serializar, deserializar
   };
