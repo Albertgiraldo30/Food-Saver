@@ -454,6 +454,7 @@
 
     // Muestra cada error junto a su campo y pone el foco en el primero.
     function mostrarErrores(errores) {
+      estadoGuardado.textContent = ''; // no mezclar "Guardado" con errores
       let primero = null;
       for (const c of CAMPOS) {
         limpiarError(c);
@@ -533,6 +534,7 @@
             if (editandoId === ing.id) salirDeEdicion();
             render();
             if (guardo) mostrarGuardado('Eliminado');
+            campoNombre.focus(); // el botón Eliminar ya no existe: el foco no se pierde
           });
       } else if (boton.dataset.accion === 'editar') {
         CAMPOS.forEach(limpiarError);
@@ -583,7 +585,13 @@
     });
     botonConfirmarNo.addEventListener('click', cerrarConfirmacion);
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && !confirmacion.hidden) cerrarConfirmacion();
+      if (confirmacion.hidden) return;
+      if (e.key === 'Escape') cerrarConfirmacion();
+      // Tab y Shift+Tab no salen de la caja: alternan entre sus dos botones.
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        (document.activeElement === botonConfirmarSi ? botonConfirmarNo : botonConfirmarSi).focus();
+      }
     });
 
     // Restaurar la despensa de ejemplo (fechas relativas a hoy) y las recetas predefinidas.
@@ -594,10 +602,12 @@
         () => {
           despensa = crearSemilla();
           recetas = RECETAS;
-          guardar();
+          aviso.hidden = true;          // se oculta ANTES de guardar: si guardar falla, su aviso queda visible
+          const guardo = guardar();
           salirDeEdicion();
-          aviso.hidden = true;
           render();
+          if (guardo) mostrarGuardado('Restaurado');
+          campoNombre.focus();
         });
     });
 

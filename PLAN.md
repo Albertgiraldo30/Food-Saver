@@ -272,7 +272,7 @@ Tres encargos separados, en este orden.
 ### Pruebas y correcciones (40 min)
 - [ ] Borrar `foodsaver.v1` y ejecutar el flujo principal completo dos veces.
 - [ ] Comprobar la tabla de orden de recetas de la capa 2.
-- [ ] Límites de fecha: hoy y +5 son próximos; +6 es normal; -1 es vencido; hoy + 5 años + 1 día es error.
+- [ ] Límites de fecha: hoy y +3 son próximos; +4 es normal (decisión 17); -1 es vencido; hoy + 5 años + 1 día es error.
 - [ ] Conversiones: leche `1 tazas` frente a 500 ml es faltante; `3 tazas` es disponible; aceite `2 cucharadas` frente a 30 ml es disponible.
 - [ ] Cantidad insuficiente: con 1 tomate, "Pasta con salsa de tomate" se muestra, tomate como parcial "1 de 3" (no faltante), y cuenta para la urgencia.
 - [ ] Normalización: "Tomates", " TOMATE " y "tomáte" cuentan como tomate; "Limones" cuenta como limón.
