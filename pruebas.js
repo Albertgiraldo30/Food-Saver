@@ -116,6 +116,10 @@ check('10001 => error', !v('10001').ok);
 check('10000 => válido', v('10000').ok && v('10000').valor === 10000);
 check('0.5 => válido', v('0.5').ok && v('0.5').valor === 0.5);
 check('"1,5" => 1.5', v('1,5').ok && v('1,5').valor === 1.5);
+check('revisor 4: 0.001 => error (redondeado sería 0)', !v('0.001').ok && v('0.001').error === 'La cantidad mínima es 0.01.');
+check('revisor 4: 0.004 => error', !v('0.004').ok);
+check('revisor 4: 0.005 => 0.01 (válido)', v('0.005').ok && v('0.005').valor === 0.01);
+check('revisor 4: 0.01 => válido', v('0.01').ok && v('0.01').valor === 0.01);
 
 seccion('Capa 4: validarIngrediente y validarFecha');
 const ok = { nombre: 'Yogur', cantidad: '2', unidad: 'unidades', vence: sumarDias(hoyISO(), 3) };

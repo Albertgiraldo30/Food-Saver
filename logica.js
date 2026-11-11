@@ -191,8 +191,11 @@ function validarCantidad(texto) {
   if (!/^-?\d+(\.\d+)?$/.test(limpio)) return { ok: false, error: 'La cantidad debe ser un número.' };
   const valor = Number(limpio);
   if (valor <= 0) return { ok: false, error: 'La cantidad debe ser mayor que 0.' };
-  if (valor > CANTIDAD_MAXIMA) return { ok: false, error: 'La cantidad no puede ser mayor que ' + CANTIDAD_MAXIMA + '.' };
-  return { ok: true, valor: redondear(valor) };
+  // Se guarda con 2 decimales: lo que redondeado queda en 0 (p. ej. 0.001) no es válido.
+  const redondeado = redondear(valor);
+  if (redondeado <= 0) return { ok: false, error: 'La cantidad mínima es 0.01.' };
+  if (redondeado > CANTIDAD_MAXIMA) return { ok: false, error: 'La cantidad no puede ser mayor que ' + CANTIDAD_MAXIMA + '.' };
+  return { ok: true, valor: redondeado };
 }
 
 /* ===================== Validación del formulario ===================== */
