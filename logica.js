@@ -16,6 +16,9 @@ const UNIDADES = {
   cucharadas: { tipo: 'volumen', factor: 15 }
 };
 
+// Unidad base de cada tipo (factor 1): se usa cuando un descuento no cabe en 2 decimales.
+const UNIDAD_BASE = { peso: 'g', volumen: 'ml', unidad: 'unidades' };
+
 const CLAVE = 'foodsaver.v1';     // clave de localStorage
 const CANTIDAD_MAXIMA = 10000;
 const DIAS_PROXIMO = 3;           // 0 a 3 días = próximo a vencer (decisión 17)
@@ -318,7 +321,6 @@ function ordenarPorVencimiento(lista) {
     String(a.vence).localeCompare(String(b.vence)) || a.nombre.localeCompare(b.nombre, 'es'));
 }
 
-// Separa la despensa ordenada en vigentes (no vencidos) y vencidos.
 // Agotado: fila con cantidad 0 (quedó así al cocinar). No cuenta para recetas ni para el resumen.
 function filaAgotada(ing) {
   return Boolean(ing) && ing.cantidad === 0 && Boolean(UNIDADES[ing.unidad]) && /^\d{4}-\d{2}-\d{2}$/.test(ing.vence);
@@ -335,8 +337,6 @@ function separarVencidos(lista) {
   };
 }
 
-// Agrega "nuevo" a la lista (la modifica). Si existe uno con el mismo nombre, tipo de unidad y
-// MISMA fecha, suma la cantidad convertida a la unidad existente. Solo fusiona filas válidas.
 // Fila existente con la que se fusionaría "nuevo" (mismo nombre, tipo de unidad y fecha), o null.
 function buscarFusion(lista, nuevo) {
   if (!filaValida(nuevo)) return null;
@@ -347,6 +347,8 @@ function buscarFusion(lista, nuevo) {
     ing.vence === nuevo.vence) || null;
 }
 
+// Agrega "nuevo" a la lista (la modifica). Si existe uno con el mismo nombre, tipo de unidad y
+// MISMA fecha, suma la cantidad convertida a la unidad existente. Solo fusiona filas válidas.
 function agregarIngrediente(lista, nuevo) {
   const existente = buscarFusion(lista, nuevo);
   if (existente) {
@@ -483,7 +485,15 @@ function cocinarReceta(lista, usos) {
       if (resta <= 1e-9) break;
       const factor = UNIDADES[fila.unidad].factor;
       const tomado = Math.min(fila.cantidad * factor, resta);
-      fila.cantidad = Math.max(0, redondear(fila.cantidad - tomado / factor));
+      const quedaBase = fila.cantidad * factor - tomado; // en g, ml o unidades
+      const queda = quedaBase / factor;
+      if (factor > 1 && Math.abs(redondear(queda) - queda) > 1e-9) {
+        // Con 2 decimales no se guardaría exacto (1 l - 15 ml = 0.985 l): se pasa a la unidad base (985 ml).
+        fila.unidad = UNIDAD_BASE[UNIDADES[fila.unidad].tipo];
+        fila.cantidad = Math.max(0, redondear(quedaBase));
+      } else {
+        fila.cantidad = Math.max(0, redondear(queda));
+      }
       resta -= tomado;
     }
     if (resta > 1e-9) sinDescontar.push({ nombre: uso.nombre, cantidad: redondear(resta / UNIDADES[uso.unidad].factor), unidad: uso.unidad });
@@ -558,7 +568,7 @@ function filaGuardadaValida(i) {
 // Receta leída de localStorage: nombre y preparación de texto, y cada ingrediente con
 // nombre de texto, cantidad > 0 y unidad conocida.
 function recetaValida(r) {
-  return Boolean(r) && typeof r.nombre === 'string' && typeof r.preparacion === 'string' &&
+  return Boolean(r) && Number.isInteger(r.id) && typeof r.nombre === 'string' && typeof r.preparacion === 'string' &&
     Array.isArray(r.ingredientes) && r.ingredientes.length > 0 &&
     r.ingredientes.every(x => x && typeof x.nombre === 'string' &&
       Number.isFinite(x.cantidad) && x.cantidad > 0 && Boolean(UNIDADES[x.unidad]));
@@ -574,7 +584,8 @@ function deserializar(texto) {
     if (!datos || !Array.isArray(datos.ingredientes)) return null;
     const ingredientes = datos.ingredientes.filter(filaGuardadaValida);
     const recetasOk = Array.isArray(datos.recetas) && datos.recetas.length > 0 &&
-      datos.recetas.every(recetaValida);
+      datos.recetas.every(recetaValida) &&
+      new Set(datos.recetas.map(r => r.id)).size === datos.recetas.length; // ids únicos
     return {
       ingredientes,
       recetas: recetasOk ? datos.recetas : RECETAS,
@@ -593,7 +604,7 @@ function deserializar(texto) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    UNIDADES, CLAVE, CANTIDAD_MAXIMA, DIAS_PROXIMO, RECETAS, SEMILLA,
+    UNIDADES, UNIDAD_BASE, CLAVE, CANTIDAD_MAXIMA, DIAS_PROXIMO, RECETAS, SEMILLA,
     limpiarTexto, normalizar, formasNombre, mismoNombre,
     hoyISO, sumarDias, diasPara, estadoDe, textoVence,
     redondear, aBase, convertir, validarCantidad, NOMBRES_UNIDAD, nombreUnidad, formatoCantidad, formatoFecha,

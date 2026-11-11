@@ -318,7 +318,7 @@ Si el plan no cuenta dentro de las 4 horas, esos 20 minutos pasan a pruebas.
    1. Aviso de datos dañados (se deja solo el `try/catch`).
    2. Foco en el primer error.
    3. Fusión entre unidades distintas (queda solo con la misma unidad).
-   4. Editar en el formulario (queda eliminar y volver a agregar).
+   4. (Obsoleto: hoy se edita en un modal, decisión 22.)
 5. Nunca se recorta P0: agregar, lista ordenada, próximos destacados, vencidos aparte, recetas con faltantes, rechazo de cantidad inválida, persistencia, README y PROCESO.
 
 ## Decisiones de la usuaria
@@ -332,17 +332,21 @@ Respuestas a las preguntas que dejó el arquitecto:
 5. **Coma decimal:** se acepta `1,5` y `1.5`.
 6. **Tope tras sumar:** el máximo de 10000 aplica también al total. (El arquitecto proponía solo a lo escrito.)
 7. **Demo:** "aguacate, 1, unidades, hoy" + "limón, 2, unidades, ayer" + cantidad `-2` rechazada.
-8. **Restablecer datos de ejemplo:** no se construye; el README explica cómo borrar los datos.
-9. **R8:** activo solo sin faltantes; descuenta desde la fila que vence primero; elimina la fila que queda en 0.
+8. **(Reemplazada por la 16)** **Restablecer datos de ejemplo:** no se construye; el README explica cómo borrar los datos.
+9. **(Reemplazada por la 20)** **R8:** activo solo sin faltantes; descuenta desde la fila que vence primero; elimina la fila que queda en 0.
 10. **Límite de fecha:** máximo hoy + 5 años.
 11. **Carpeta:** se queda en `C:\Users\sofia\Desktop\Concurso IA`.
 12. **Plurales en "es":** también se quitan ("Limones" = "limón"). Se compara con `mismoNombre(a, b)`, que prueba quitando "s" y quitando "es".
 13. **Ingrediente que no alcanza (cambia la decisión 4):** la receta usa lo que hay ("tomate 1 de 3 unidades") y los demás ingredientes quedan igual; ya no cuenta como faltante "no alcanza". Sigue contando para mostrar la receta y para su urgencia. La tarjeta muestra "Usa:" con cantidades en lugar de "Tienes:".
-14. **Separar la lógica (pedido de la usuaria, tras la capa 2):** `logica.js` con las funciones puras y constantes, `pruebas.js` con los 23 casos de la capa 2 más los nuevos (`node pruebas.js`), e `index.html` solo con la pantalla. Reemplaza "un solo index.html" del stack.
+14. **(Hoy pruebas.js tiene más de 100 casos; los 23 originales siguen dentro)** **Separar la lógica (pedido de la usuaria, tras la capa 2):** `logica.js` con las funciones puras y constantes, `pruebas.js` con los 23 casos de la capa 2 más los nuevos (`node pruebas.js`), e `index.html` solo con la pantalla. Reemplaza "un solo index.html" del stack.
 15. **Persistencia de recetas:** en la capa 3 se guardan en localStorage la despensa **y las recetas** (pedido de la usuaria). Si las recetas guardadas están dañadas, se usan las predefinidas.
 16. **Restaurar datos de ejemplo (cambia la decisión 8):** la usuaria pidió el botón "Restaurar datos de ejemplo" con confirmación en la página (sin alert ni confirm del navegador). Requisito R9 de CLAUDE.md.
 17. **Próximo a vencer = 0 a 3 días (cambia R3):** la usuaria pidió colores rojo (vencido), naranja (vence en 3 días o menos) y verde (ok), y decidió que el cambio aplique a todo: lista, resumen y recetas (Aprovecha y orden).
 18. **Resumen arriba (pedido de la usuaria):** tres tarjetas: vencen pronto (0 a 3 días), vencidos y recetas posibles. "Recetas posibles" = todas las sugeridas (decisión de la usuaria), no solo las sin faltantes.
-19. **Aviso "Guardado" y confirmación al eliminar (pedido de la usuaria):** tras agregar o editar aparece "Guardado" (y "Eliminado" al borrar) junto al botón, 4 segundos, solo si localStorage guardó de verdad. Eliminar pide confirmación en la página con nombre y cantidad. Los errores en línea bajo cantidad y fecha ya existían desde la capa 4.
+19. **(El aviso "Guardado" fue reemplazado por los toasts de la decisión 23)** **Aviso "Guardado" y confirmación al eliminar (pedido de la usuaria):** tras agregar o editar aparece "Guardado" (y "Eliminado" al borrar) junto al botón, 4 segundos, solo si localStorage guardó de verdad. Eliminar pide confirmación en la página con nombre y cantidad. Los errores en línea bajo cantidad y fecha ya existían desde la capa 4.
 20. **Cociné esta receta (R8, reemplaza la decisión 9):** solo sin faltantes; modal con cantidad usada editable por ingrediente (0 a lo disponible); descuenta desde la fila que vence primero, con conversión, sin vencidos y sin negativos; en 0 la fila queda "Agotada" en una sección aparte (ya no se borra). Las filas con cantidad 0 se guardan y se recargan.
 21. **Lista de compras (R10):** agotados + vencidos + faltantes de recetas marcadas; lo que no alcanza entra con la cantidad que falta (decisión de la usuaria); copiar solo lo pendiente (decisión de la usuaria). Decisión del agente, informada: un agotado o vencido no entra si todavía hay ese ingrediente disponible, y lo marcado como comprado se olvida cuando el ingrediente sale de la lista. Restaurar también limpia la lista.
+22. **Modal de edición (pedido de la usuaria):** Editar abre un modal con los campos llenos; el formulario de Agregar solo agrega. Mismas validaciones (controlador común). Se cierra con Esc, X, clic fuera y Cancelar; Tab no sale del modal; el foco vuelve al botón Editar de la fila. Editar un agotado es "Reponer": la cantidad queda vacía.
+23. **Toasts (pedido de la usuaria):** esquina superior derecha, 3 s, máximo 3: verde (agregado, cambios guardados, restaurado, inventario actualizado, lista copiada), gris (eliminado y avisos), rojo (errores de validación, además del error bajo cada campo).
+24. **Nombres completos de unidad (pedido de la usuaria):** NOMBRES_UNIDAD en logica.js; se muestran gramos, kilogramos, libras, mililitros, litros, tazas, cucharadas y unidades en singular o plural. Los valores internos y lo guardado no cambian.
+25. **Descuentos exactos al cocinar (revisión completa):** si lo que queda no cabe en 2 decimales (1 l - 15 ml = 0.985 l), la fila pasa a la unidad base (985 ml) en vez de redondear. Recetas guardadas deben tener id entero y único.

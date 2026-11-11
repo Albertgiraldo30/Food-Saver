@@ -199,8 +199,9 @@ let dc = semilla(); let prep = L.prepararCocina(pericos, dc);
 check('prepararCocina: Huevos pericos se puede cocinar, sugeridas y disponibles', prep.puedeCocinar &&
   prep.items.map(i => i.nombre + ' ' + i.sugerida + '/' + i.disponible).join() === 'huevo 3/12,tomate 1/4,cebolla 1/3,aceite 15/1000');
 L.cocinarReceta(dc, usosDe(prep));
-check('descuento exacto: huevo 12->9, tomate 4->3, cebolla 3->2, aceite 1 l -> 0.99 l',
-  cant(dc, 'Huevo') === 9 && cant(dc, 'Tomate') === 3 && cant(dc, 'Cebolla') === 2 && cant(dc, 'Aceite') === 0.99);
+check('descuento exacto: huevo 12->9, tomate 4->3, cebolla 3->2, aceite 1 l -> 985 ml (sin redondeo)',
+  cant(dc, 'Huevo') === 9 && cant(dc, 'Tomate') === 3 && cant(dc, 'Cebolla') === 2 &&
+  cant(dc, 'Aceite') === 985 && dc.find(i => i.nombre === 'Aceite').unidad === 'ml');
 dc = semilla(); L.cocinarReceta(dc, usosDe(L.prepararCocina(pericos, dc), { huevo: 5 }));
 check('descuento mayor a lo sugerido: 5 huevos => 12->7', cant(dc, 'Huevo') === 7);
 dc = semilla(); L.cocinarReceta(dc, usosDe(L.prepararCocina(pericos, dc), { huevo: 1, cebolla: 0 }));
@@ -217,6 +218,12 @@ check('agotado: se guarda y se recarga (no se descarta)', (() => { const d = L.d
   return d.descartados === 0 && d.ingredientes.find(i => i.nombre === 'Huevo').cantidad === 0; })());
 check('agotado: la receta lo marca como faltante "agotado" y ya no se puede cocinar', (() => { const p2 = L.prepararCocina(pericos, dc);
   return !p2.puedeCocinar && p2.faltantes.some(f => f.nombre === 'huevo' && f.motivo === 'agotado'); })());
+dc = [{ id: 'k', nombre: 'arroz', cantidad: 1.5, unidad: 'kg', vence: sumarDias(hoyISO(), 30) }];
+L.cocinarReceta(dc, [{ nombre: 'arroz', cantidad: 1, unidad: 'g' }]);
+check('revisión total: 1.5 kg - 1 g => 1499 g (antes quedaba 1.5 kg y no descontaba)', dc[0].cantidad === 1499 && dc[0].unidad === 'g');
+dc = [{ id: 'p', nombre: 'pollo', cantidad: 0.01, unidad: 'libras', vence: sumarDias(hoyISO(), 30) }];
+L.cocinarReceta(dc, [{ nombre: 'pollo', cantidad: 3, unidad: 'g' }]);
+check('revisión total: 0.01 libras - 3 g => 2 g (antes quedaba Agotado)', dc[0].cantidad === 2 && dc[0].unidad === 'g');
 dc = semilla(); L.cocinarReceta(dc, [{ nombre: 'leche', cantidad: 1, unidad: 'tazas' }]);
 check('conversión taza->ml: 1 taza de leche sobre 1 l => 0.76 l', cant(dc, 'Leche') === 0.76);
 dc = [{ id: 't', nombre: 'leche', cantidad: 3, unidad: 'tazas', vence: sumarDias(hoyISO(), 5) }];
@@ -303,6 +310,12 @@ check('revisor 3: receta guardada con unidad desconocida => predefinidas',
 check('revisor 3: receta guardada sin preparación => predefinidas',
   L.deserializar('{"version":1,"ingredientes":[],"recetas":[{"nombre":"r","ingredientes":[{"nombre":"x","cantidad":1,"unidad":"g"}]}]}')
     .recetas === L.RECETAS);
+check('revisión total: receta guardada sin id, con id de texto o repetido => predefinidas', (() => {
+  const sinId = { ...L.RECETAS[0] }; delete sinId.id;
+  const conTexto = { ...L.RECETAS[0], id: 'a' };
+  return L.deserializar(L.serializar([], [sinId])).recetas === L.RECETAS &&
+    L.deserializar(L.serializar([], [conTexto])).recetas === L.RECETAS &&
+    L.deserializar(L.serializar([], [L.RECETAS[0], { ...L.RECETAS[1], id: 1 }])).recetas === L.RECETAS; })());
 check('recetas guardadas válidas se respetan',
   L.deserializar(L.serializar([], [L.RECETAS[0]])).recetas.length === 1);
 check('recetas guardadas dañadas => usa las predefinidas',

@@ -141,7 +141,7 @@
     .tarjeta-resumen.recetas .cifra { color: var(--verde); }
     @media (max-width: 520px) { .tarjeta-resumen { padding: 10px; font-size: 0.85rem; } .tarjeta-resumen .cifra { font-size: 1.5rem; } }
 
-    /* Aviso breve "Guardado" junto al botón */
+    /* Botones del formulario alineados */
     .acciones-form { align-items: center; }
     /* Notificaciones (toasts): esquina superior derecha, desaparecen a los 3 s */
     .toasts {
@@ -819,6 +819,10 @@
       editandoId = ing.id;
       edicion.limpiarErrores();
       edicion.llenar(ing);
+      // Un agotado (cantidad 0) se "repone": la cantidad queda vacía para escribir la nueva.
+      const agotado = filaAgotada(ing);
+      if (agotado) edicion.campos.cantidad.value = '';
+      document.getElementById('titulo-editar').textContent = agotado ? 'Reponer ingrediente' : 'Editar ingrediente';
       render(); // marca la fila que se está editando (el botón Editar se vuelve a crear)
       abrirModal(modalEditar, edicion.campos.nombre);
       modalEditar.focoAnterior = null; // el foco de vuelta se maneja en cerrarEdicion

@@ -20,7 +20,7 @@ R8. "Cociné esta receta" (decisión 20): botón en cada tarjeta, activo solo si
 
 ## Reglas de comparación
 - Nombres: ignorar mayúsculas, tildes, espacios extra y el plural: "s" final ("Tomates" = "tomate") o "es" final ("Limones" = "limón"). Se comparan con `mismoNombre(a, b)`.
-- Unidades permitidas (selector): unidades, g, kg, ml, l, tazas, cucharadas, libras.
+- Unidades permitidas (valores internos): unidades, g, kg, ml, l, tazas, cucharadas, libras. En pantalla se muestran con nombre completo en singular o plural (gramos, kilogramos, mililitros, litros…), decisión 24.
 - Conversiones: 1 kg = 1000 g; 1 libra = 500 g (libra colombiana); 1 l = 1000 ml; 1 taza = 240 ml; 1 cucharada = 15 ml.
 - Peso (g, kg, libras) solo con peso; volumen (ml, l, tazas, cucharadas) solo con volumen; "unidades" solo con "unidades". No convertible → faltante.
 
@@ -46,7 +46,7 @@ Recetas predefinidas (fijas en el código):
 ## Stack (no cambiar)
 - index.html (pantalla: HTML, CSS y JavaScript del DOM) + logica.js (funciones puras y constantes, sin DOM ni localStorage) + pruebas.js (pruebas de logica.js, se ejecutan con `node pruebas.js`). Cambio pedido por la usuaria.
 - JavaScript puro, sin librerías externas ni CDN. logica.js se carga con un <script> normal (no módulo) para que funcione con doble clic.
-- Persistencia con localStorage (despensa y recetas).
+- Persistencia con localStorage (clave foodsaver.v1): despensa, recetas, recetas marcadas "Quiero hacerla" y comprados.
 - Toda función pura nueva va en logica.js con su prueba en pruebas.js; `node pruebas.js` debe terminar sin fallas antes de cada commit.
 
 ## Validaciones obligatorias
