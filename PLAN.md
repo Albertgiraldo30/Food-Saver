@@ -80,7 +80,7 @@ Las funciones de lógica no tocan el DOM, para poder probarlas desde la consola.
 ## 4. Modelo de datos
 
 ### Qué se guarda
-Solo los ingredientes de la despensa.
+Los ingredientes de la despensa **y las recetas** (decisión 15).
 
 ```json
 {
@@ -89,9 +89,12 @@ Solo los ingredientes de la despensa.
     { "id": "m3x9a1", "nombre": "Tomate", "cantidad": 4,   "unidad": "unidades", "vence": "2026-11-12" },
     { "id": "m3x9a2", "nombre": "Queso",  "cantidad": 200, "unidad": "g",        "vence": "2026-11-10" },
     { "id": "m3x9a3", "nombre": "Leche",  "cantidad": 1,   "unidad": "l",        "vence": "2026-11-13" }
-  ]
+  ],
+  "recetas": [ { "id": 1, "nombre": "Huevos pericos", "ingredientes": [ ... ], "preparacion": "..." } ]
 }
 ```
+
+Al leer (`deserializar` en logica.js): las filas de despensa inválidas se descartan con aviso en pantalla; si alguna receta guardada es inválida se usan las predefinidas. Si se cambian las recetas en el código, hay que borrar `foodsaver.v1` para verlas.
 
 - `id`: texto único (`Date.now()` más un aleatorio). No usar `crypto.randomUUID`.
 - `nombre`: como lo escribió la persona, sin espacios sobrantes.
@@ -101,7 +104,7 @@ Solo los ingredientes de la despensa.
 
 ### Qué no se guarda
 - Estado (vencido, próximo, normal), nombre normalizado y sugerencias: se calculan en cada `render()`.
-- Recetas: constantes en el código.
+- (Las recetas predefinidas siguen como constante `RECETAS` en logica.js; se usan la primera vez y como respaldo.)
 
 ```json
 {

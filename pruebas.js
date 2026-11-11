@@ -144,8 +144,24 @@ check('despensa vacía guardada sigue vacía', L.deserializar(L.serializar([], L
 check('JSON dañado "{" => null', L.deserializar('{') === null);
 check('JSON sin ingredientes => null', L.deserializar('{"version":1}') === null);
 check('filas sin id o sin nombre se descartan al leer',
-  L.deserializar('{"version":1,"ingredientes":[null,{"nombre":"x"},{"id":"a"},{"id":"b","nombre":"Tomate"}]}')
-    .ingredientes.length === 1);
+  L.deserializar('{"version":1,"ingredientes":[null,{"nombre":"x"},{"id":"a"},' +
+    '{"id":"b","nombre":"Tomate","cantidad":1,"unidad":"unidades","vence":"2026-01-01"}]}').ingredientes.length === 1);
+const conInvalidas = L.deserializar(JSON.stringify({ version: 1, ingredientes: [
+  { id: 'a', nombre: 'X', cantidad: null, unidad: 'g', vence: '2026-01-01' },
+  { id: 'b', nombre: 'Y', cantidad: 1, unidad: 'zz', vence: '2026-01-01' },
+  { id: 'c', nombre: 'Z', cantidad: 1, unidad: 'g', vence: '' },
+  { id: 'd', nombre: 'Ok', cantidad: 1, unidad: 'g', vence: '2026-01-01' }] }));
+check('revisor 3: filas con cantidad/unidad/fecha inválidas se descartan y se cuentan',
+  conInvalidas.ingredientes.length === 1 && conInvalidas.descartados === 3);
+const recetaRota = '{"version":1,"ingredientes":[],"recetas":[{"nombre":"r","preparacion":"p",' +
+  '"ingredientes":[{"nombre":"x","cantidad":1,"unidad":"zz"}]}]}';
+check('revisor 3: receta guardada con unidad desconocida => predefinidas',
+  L.deserializar(recetaRota).recetas === L.RECETAS && L.deserializar(recetaRota).recetasRestablecidas);
+check('revisor 3: receta guardada sin preparación => predefinidas',
+  L.deserializar('{"version":1,"ingredientes":[],"recetas":[{"nombre":"r","ingredientes":[{"nombre":"x","cantidad":1,"unidad":"g"}]}]}')
+    .recetas === L.RECETAS);
+check('recetas guardadas válidas se respetan',
+  L.deserializar(L.serializar([], [L.RECETAS[0]])).recetas.length === 1);
 check('recetas guardadas dañadas => usa las predefinidas',
   L.deserializar('{"version":1,"ingredientes":[],"recetas":"x"}').recetas === L.RECETAS);
 

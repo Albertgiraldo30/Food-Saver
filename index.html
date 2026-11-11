@@ -114,6 +114,10 @@
       }
       despensa = datos.ingredientes;
       recetas = datos.recetas;
+      if (datos.descartados > 0) {
+        mostrarAviso('Se descartaron ' + datos.descartados + ' ingrediente(s) guardados con datos inválidos.');
+        guardar();
+      }
     }
 
     /* ===================== Render ===================== */

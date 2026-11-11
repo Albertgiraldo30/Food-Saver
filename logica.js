@@ -320,17 +320,38 @@ function serializar(ingredientes, recetas) {
   return JSON.stringify({ version: 1, ingredientes, recetas });
 }
 
-// Lee el texto guardado. Devuelve { ingredientes, recetas } o null si está dañado.
-// Descarta filas sin id o sin nombre (no se podrían pintar ni editar).
+// Fila de despensa leída de localStorage: id y nombre de texto + filaValida (unidad, fecha, cantidad).
+function filaGuardadaValida(i) {
+  return Boolean(i) && typeof i.id === 'string' && typeof i.nombre === 'string' &&
+    i.nombre.trim() !== '' && filaValida(i);
+}
+
+// Receta leída de localStorage: nombre y preparación de texto, y cada ingrediente con
+// nombre de texto, cantidad > 0 y unidad conocida.
+function recetaValida(r) {
+  return Boolean(r) && typeof r.nombre === 'string' && typeof r.preparacion === 'string' &&
+    Array.isArray(r.ingredientes) && r.ingredientes.length > 0 &&
+    r.ingredientes.every(x => x && typeof x.nombre === 'string' &&
+      Number.isFinite(x.cantidad) && x.cantidad > 0 && Boolean(UNIDADES[x.unidad]));
+}
+
+// Lee el texto guardado. Devuelve null si está dañado, o
+// { ingredientes, recetas, descartados, recetasRestablecidas }:
+// - descarta filas de despensa inválidas (las cuenta en "descartados");
+// - si alguna receta guardada es inválida, usa las RECETAS predefinidas.
 function deserializar(texto) {
   try {
     const datos = JSON.parse(texto);
     if (!datos || !Array.isArray(datos.ingredientes)) return null;
-    const ingredientes = datos.ingredientes.filter(i =>
-      i && typeof i.id === 'string' && typeof i.nombre === 'string');
+    const ingredientes = datos.ingredientes.filter(filaGuardadaValida);
     const recetasOk = Array.isArray(datos.recetas) && datos.recetas.length > 0 &&
-      datos.recetas.every(r => r && typeof r.nombre === 'string' && Array.isArray(r.ingredientes));
-    return { ingredientes, recetas: recetasOk ? datos.recetas : RECETAS };
+      datos.recetas.every(recetaValida);
+    return {
+      ingredientes,
+      recetas: recetasOk ? datos.recetas : RECETAS,
+      descartados: datos.ingredientes.length - ingredientes.length,
+      recetasRestablecidas: !recetasOk
+    };
   } catch (e) {
     return null;
   }
@@ -346,6 +367,6 @@ if (typeof module !== 'undefined' && module.exports) {
     redondear, aBase, convertir, validarCantidad,
     nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas,
-    serializar, deserializar
+    filaGuardadaValida, recetaValida, serializar, deserializar
   };
 }
