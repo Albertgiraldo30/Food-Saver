@@ -37,7 +37,7 @@ Plan propuesto por el subagente `arquitecto` y ajustado con las decisiones de la
 
 ### P2 — mejoras y extras
 - Diseño cuidado: colores, etiquetas "Vence hoy / en N días", tarjetas, adaptación a móvil.
-- Motivo del faltante ("no está", "vencido", "no alcanza", "unidad no compatible").
+- Motivo del faltante ("no está", "vencido", "unidad no compatible").
 - Confirmación en pantalla antes de eliminar.
 - **R8.** Botón "Cocinar esta receta" (solo si sobra tiempo): activo solo sin faltantes; descuenta desde la fila que vence primero; elimina la fila que queda en 0.
 - **Pendiente de decisión de la usuaria, sin tiempo asignado:** crear o editar recetas, IA dentro de la app, integraciones externas.
@@ -136,7 +136,7 @@ Solo son compatibles las unidades del mismo tipo.
 ### Reglas de cálculo
 - `diasPara(vence)`: menor que 0 es vencido; de 0 a 5 es próximo; mayor que 5 es normal.
 - Cantidad disponible de un ingrediente = suma convertida de **todas sus filas no vencidas** de tipo compatible.
-- Ingrediente de receta **disponible**: esa suma alcanza. Si no, es **faltante** (no está, solo vencido, unidad no compatible o no alcanza).
+- Ingrediente de receta **disponible**: esa suma alcanza. **Parcial**: está pero no alcanza; se usa lo que hay ("tomate 1 de 3") y no es faltante (decisión 13). **Faltante**: no está, solo vencido o unidad no compatible.
 - Ingrediente **presente**: tiene al menos una fila no vencida de tipo compatible, aunque no alcance.
 - Una receta se muestra si tiene al menos 1 ingrediente presente.
 - La urgencia de una receta = menos días entre sus ingredientes presentes (incluye los que no alcanzan).
@@ -269,7 +269,7 @@ Tres encargos separados, en este orden.
 - [ ] Comprobar la tabla de orden de recetas de la capa 2.
 - [ ] Límites de fecha: hoy y +5 son próximos; +6 es normal; -1 es vencido; hoy + 5 años + 1 día es error.
 - [ ] Conversiones: leche `1 tazas` frente a 500 ml es faltante; `3 tazas` es disponible; aceite `2 cucharadas` frente a 30 ml es disponible.
-- [ ] Cantidad insuficiente: con 1 tomate, "Pasta con salsa de tomate" se muestra, tomate como faltante "no alcanza", y cuenta para la urgencia.
+- [ ] Cantidad insuficiente: con 1 tomate, "Pasta con salsa de tomate" se muestra, tomate como parcial "1 de 3" (no faltante), y cuenta para la urgencia.
 - [ ] Normalización: "Tomates", " TOMATE " y "tomáte" cuentan como tomate; "Limones" cuenta como limón.
 - [ ] `README.md`: cómo abrir, cómo usar y cómo borrar los datos para empezar de cero.
 - [ ] `PROCESO.md`: los 3 ejemplos (se anotan durante el trabajo, no al final).
@@ -323,7 +323,7 @@ Respuestas a las preguntas que dejó el arquitecto:
 1. **Fusión con fechas distintas:** no se fusiona; fila aparte. (El arquitecto proponía quedarse con la fecha más próxima.)
 2. **Fusión con un vencido:** no; filas separadas.
 3. **Fusión al editar:** no; solo al agregar.
-4. **Cantidad insuficiente:** sí cuenta para mostrar la receta y para su urgencia; aparece como faltante "no alcanza". (El arquitecto proponía que no contara.)
+4. **Cantidad insuficiente:** sí cuenta para mostrar la receta y para su urgencia; se usa lo que hay (ver decisión 13, que reemplaza el faltante "no alcanza"). (El arquitecto proponía que no contara.)
 5. **Coma decimal:** se acepta `1,5` y `1.5`.
 6. **Tope tras sumar:** el máximo de 10000 aplica también al total. (El arquitecto proponía solo a lo escrito.)
 7. **Demo:** "aguacate, 1, unidades, hoy" + "limón, 2, unidades, ayer" + cantidad `-2` rechazada.
@@ -332,3 +332,4 @@ Respuestas a las preguntas que dejó el arquitecto:
 10. **Límite de fecha:** máximo hoy + 5 años.
 11. **Carpeta:** se queda en `C:\Users\sofia\Desktop\Concurso IA`.
 12. **Plurales en "es":** también se quitan ("Limones" = "limón"). Se compara con `mismoNombre(a, b)`, que prueba quitando "s" y quitando "es".
+13. **Ingrediente que no alcanza (cambia la decisión 4):** la receta usa lo que hay ("tomate 1 de 3 unidades") y los demás ingredientes quedan igual; ya no cuenta como faltante "no alcanza". Sigue contando para mostrar la receta y para su urgencia. La tarjeta muestra "Usa:" con cantidades en lugar de "Tienes:".

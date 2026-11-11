@@ -12,7 +12,7 @@ R2. Actualizar ingredientes: editar y eliminar. Al AGREGAR, si ya existe uno con
 R3. Lista ordenada por fecha de vencimiento (más próxima primero; empate por nombre). "Próximo a vencer" = vence en 0 a 5 días: se destaca con color y texto.
 R4. Vencidos (fecha anterior a hoy) en sección aparte "Vencidos", en rojo, y EXCLUIDOS de las sugerencias de recetas.
 R5. Sugerir recetas que usan al menos 1 ingrediente presente y no vencido (aunque no alcance la cantidad). Orden: primero las que usan algún próximo a vencer (el de menos días primero), luego menos faltantes, luego orden original.
-R6. Para cada receta: mostrar disponibles y faltantes. Faltante = no está, solo está vencido, unidad no compatible o la cantidad no alcanza. La cantidad disponible es la suma (convertida) de todas las filas no vencidas de ese ingrediente.
+R6. Para cada receta: mostrar lo que usa y los faltantes. Faltante = no está, solo está vencido o unidad no compatible. La cantidad disponible es la suma (convertida) de todas las filas no vencidas de ese ingrediente. Si un ingrediente está pero NO alcanza, la receta usa lo que hay ("tomate 1 de 3 unidades"), no cuenta como faltante y los demás ingredientes quedan igual.
 R7. Los datos NO se pierden al recargar la página (localStorage).
 R8 (P2, solo si sobra tiempo). Botón "Cocinar esta receta": activo solo si no hay faltantes; descuenta empezando por la fila que vence primero; elimina la fila que queda en 0.
 

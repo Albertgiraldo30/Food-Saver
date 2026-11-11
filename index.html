@@ -257,6 +257,7 @@
     // (convertidas) todas las filas NO vencidas del mismo nombre y tipo de unidad.
     function evaluarReceta(receta, lista) {
       const disponibles = [];
+      const parciales = [];
       const faltantes = [];
       let presentes = 0;
       let diasUrgente = Infinity;
@@ -281,12 +282,17 @@
         const diasMin = Math.min(...compatibles.map(ing => diasPara(ing.vence)));
         if (diasMin < diasUrgente) { diasUrgente = diasMin; urgente = req.nombre; }
 
+        // Si no alcanza, se usa lo que hay (parcial) y los demás ingredientes quedan igual.
         const total = compatibles.reduce((suma, ing) => suma + aBase(ing.cantidad, ing.unidad).valor, 0);
-        if (total + 1e-9 >= pedido.valor) disponibles.push({ nombre: req.nombre });
-        else faltantes.push({ nombre: req.nombre, motivo: 'no alcanza' });
+        if (total + 1e-9 >= pedido.valor) {
+          disponibles.push({ nombre: req.nombre, cantidad: req.cantidad, unidad: req.unidad });
+        } else {
+          const tiene = redondear(total / UNIDADES[req.unidad].factor); // expresado en la unidad de la receta
+          parciales.push({ nombre: req.nombre, tiene, pide: req.cantidad, unidad: req.unidad });
+        }
       }
 
-      return { receta, disponibles, faltantes, presentes, diasUrgente, urgente,
+      return { receta, disponibles, parciales, faltantes, presentes, diasUrgente, urgente,
                usaProximo: diasUrgente <= 5 };
     }
 
@@ -380,8 +386,15 @@
           tarjeta.appendChild(crearTexto('p',
             'Aprovecha: ' + ev.urgente + ' (' + textoVence(ev.diasUrgente).toLowerCase() + ')', 'proximo'));
         }
-        const tienes = ev.disponibles.map(d => d.nombre).join(', ') || 'ninguno completo';
-        tarjeta.appendChild(crearTexto('p', 'Tienes: ' + tienes));
+        // "Usa": en el orden de la receta; los que no alcanzan se muestran como "tomate 1 de 3 unidades".
+        const usa = ev.receta.ingredientes.map(req => {
+          const d = ev.disponibles.find(x => x.nombre === req.nombre);
+          if (d) return d.nombre + ' ' + d.cantidad + ' ' + d.unidad;
+          const p = ev.parciales.find(x => x.nombre === req.nombre);
+          if (p) return p.nombre + ' ' + p.tiene + ' de ' + p.pide + ' ' + p.unidad;
+          return null;
+        }).filter(Boolean).join(', ');
+        tarjeta.appendChild(crearTexto('p', 'Usa: ' + usa));
         const falta = ev.faltantes.map(f => f.nombre + ' (' + f.motivo + ')').join(', ') || 'nada';
         tarjeta.appendChild(crearTexto('p', 'Te falta: ' + falta));
         tarjeta.appendChild(crearTexto('p', 'Preparación: ' + ev.receta.preparacion));
