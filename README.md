@@ -18,7 +18,7 @@ Las 5 capas del PLAN están terminadas. Quedan pendientes y limitaciones (ver al
 - Agregar un ingrediente con nombre, cantidad, unidad y fecha.
 - Unidades disponibles: unidades, g, kg, ml, l, tazas, cucharadas, libras.
 - Ver los vencidos en una sección aparte, en rojo, con texto "Venció ayer" o "Venció hace N días".
-- Ver los próximos a vencer (0 a 5 días) destacados en naranja, con texto "Vence hoy", "Vence mañana" o "Vence en N días".
+- Ver los próximos a vencer (0 a 3 días) destacados en naranja; los que están bien, en verde, con texto "Vence hoy", "Vence mañana" o "Vence en N días".
 - Editar un ingrediente: reusa el formulario, con los botones "Guardar cambios" y "Cancelar". Editar nunca fusiona filas.
 - Eliminar un ingrediente, también desde la sección de vencidos.
 - Al agregar, se fusiona con una fila existente solo si coinciden nombre, tipo de unidad y fecha (las cantidades se suman).

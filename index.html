@@ -95,6 +95,7 @@
     }
     .ingrediente.proximo { border-left-color: var(--naranja); background: var(--naranja-claro); }
     .ingrediente.vencido { border-left-color: var(--rojo); background: var(--rojo-claro); }
+    .ingrediente.ok { border-left-color: var(--verde); background: var(--verde-claro); }
     .ingrediente.editando { outline: 3px solid var(--verde); outline-offset: 2px; }
     .info { flex: 1 1 220px; min-width: 0; }
     .nombre { font-weight: 700; overflow-wrap: anywhere; }
@@ -106,6 +107,7 @@
     }
     .etiqueta.proximo { background: var(--naranja); color: #fff; }
     .etiqueta.vencido { background: var(--rojo); color: #fff; }
+    .etiqueta.ok { background: var(--verde); color: #fff; }
     .vacio { color: var(--suave); font-style: italic; }
 
     /* Tarjetas de recetas */
@@ -306,13 +308,16 @@
     function crearFila(ing) {
       const estado = estadoDe(ing);
       const li = document.createElement('li');
-      li.className = 'ingrediente' + (estado !== 'normal' ? ' ' + estado : '') + (ing.id === editandoId ? ' editando' : '');
+      // Colores: vencido (rojo), próximo 0 a 3 días (naranja), ok (verde); siempre con etiqueta de texto.
+      const clase = estado === 'normal' ? 'ok' : estado;
+      li.className = 'ingrediente ' + clase + (ing.id === editandoId ? ' editando' : '');
 
       const info = document.createElement('div');
       info.className = 'info';
       const nombre = crearTexto('div', ing.nombre, 'nombre');
       if (estado === 'proximo') nombre.appendChild(crearTexto('span', 'Próximo', 'etiqueta proximo'));
       if (estado === 'vencido') nombre.appendChild(crearTexto('span', 'Vencido', 'etiqueta vencido'));
+      if (estado === 'normal') nombre.appendChild(crearTexto('span', 'OK', 'etiqueta ok'));
       info.appendChild(nombre);
       const dias = diasPara(ing.vence);
       const vence = Number.isFinite(dias) ? textoVence(dias) + ' · ' + formatoFecha(ing.vence) : 'sin fecha';

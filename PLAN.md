@@ -18,7 +18,7 @@ Plan propuesto por el subagente `arquitecto` y ajustado con las decisiones de la
 
 ### P0 — flujo principal y cumplimiento del concurso
 - **R1.** Agregar ingrediente: nombre, cantidad, unidad, fecha de vencimiento.
-- **R3.** Lista ordenada por vencimiento (más próxima primero). Destacar "próximo a vencer": de 0 a 5 días.
+- **R3.** Lista ordenada por vencimiento (más próxima primero). Destacar "próximo a vencer": de 0 a 3 días (decisión 17).
 - **R4.** Vencidos (fecha anterior a hoy) en sección aparte, en rojo, excluidos de las recetas.
 - **R5.** Sugerir recetas con al menos 1 ingrediente presente y no vencido (aunque no alcance). Orden: urgencia y luego menos faltantes.
 - **R6.** Mostrar disponibles y faltantes por receta, con conversión de unidades (la despensa de ejemplo la necesita: `1 l` frente a `15 ml`, `1 libras` frente a `300 g`).
@@ -139,7 +139,7 @@ Solo son compatibles las unidades del mismo tipo.
 - Las fechas de la semilla se calculan una vez, relativas al día de la primera carga, y se guardan como fechas fijas.
 
 ### Reglas de cálculo
-- `diasPara(vence)`: menor que 0 es vencido; de 0 a 5 es próximo; mayor que 5 es normal.
+- `diasPara(vence)`: menor que 0 es vencido; de 0 a 3 es próximo; mayor que 3 es normal (decisión 17).
 - Cantidad disponible de un ingrediente = suma convertida de **todas sus filas no vencidas** de tipo compatible.
 - Ingrediente de receta **disponible**: esa suma alcanza. **Parcial**: está pero no alcanza; se usa lo que hay ("tomate 1 de 3") y no es faltante (decisión 13). **Faltante**: no está, solo vencido o unidad no compatible.
 - Ingrediente **presente**: tiene al menos una fila no vencida de tipo compatible, aunque no alcance.
@@ -178,7 +178,7 @@ Tres encargos separados, en este orden.
 
 **2A. Lista por estado (P0, 10 min)**
 - [ ] Separar los vencidos en la sección "Vencidos".
-- [ ] Marcar los próximos (0 a 5 días) con clase y texto: "Vence hoy", "Vence mañana", "Vence en N días".
+- [ ] Marcar los próximos (0 a 3 días, decisión 17) con clase y texto: "Vence hoy", "Vence mañana", "Vence en N días".
 
 **2B. Recetas (P0, 30 min)**
 - [ ] `evaluarReceta(receta, despensa)`: devuelve disponibles, faltantes, presentes y días del más urgente.
@@ -341,3 +341,4 @@ Respuestas a las preguntas que dejó el arquitecto:
 14. **Separar la lógica (pedido de la usuaria, tras la capa 2):** `logica.js` con las funciones puras y constantes, `pruebas.js` con los 23 casos de la capa 2 más los nuevos (`node pruebas.js`), e `index.html` solo con la pantalla. Reemplaza "un solo index.html" del stack.
 15. **Persistencia de recetas:** en la capa 3 se guardan en localStorage la despensa **y las recetas** (pedido de la usuaria). Si las recetas guardadas están dañadas, se usan las predefinidas.
 16. **Restaurar datos de ejemplo (cambia la decisión 8):** la usuaria pidió el botón "Restaurar datos de ejemplo" con confirmación en la página (sin alert ni confirm del navegador). Requisito R9 de CLAUDE.md.
+17. **Próximo a vencer = 0 a 3 días (cambia R3):** la usuaria pidió colores rojo (vencido), naranja (vence en 3 días o menos) y verde (ok), y decidió que el cambio aplique a todo: lista, resumen y recetas (Aprovecha y orden).

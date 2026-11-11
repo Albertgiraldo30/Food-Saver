@@ -18,7 +18,7 @@ const UNIDADES = {
 
 const CLAVE = 'foodsaver.v1';     // clave de localStorage
 const CANTIDAD_MAXIMA = 10000;
-const DIAS_PROXIMO = 5;           // 0 a 5 días = próximo a vencer
+const DIAS_PROXIMO = 3;           // 0 a 3 días = próximo a vencer (decisión 17)
 
 const RECETAS = [
   { id: 1, nombre: 'Huevos pericos',
@@ -150,7 +150,7 @@ function diasPara(vence) {
   return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86400000);
 }
 
-// 'vencido' (antes de hoy), 'proximo' (0 a 5 días) o 'normal'.
+// 'vencido' (antes de hoy), 'proximo' (0 a 3 días) o 'normal'.
 function estadoDe(ing) {
   const d = diasPara(ing.vence);
   if (d < 0) return 'vencido';

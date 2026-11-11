@@ -9,7 +9,7 @@ Persona de hogar que hace mercado y cocina en casa; quiere saber rápido qué us
 ## Requisitos (en orden de prioridad)
 R1. Agregar ingrediente: nombre, cantidad, unidad, fecha de vencimiento.
 R2. Actualizar ingredientes: editar y eliminar. Al AGREGAR, si ya existe uno con el mismo nombre (normalizado), unidad compatible y la MISMA fecha, se suma la cantidad (convertida a la unidad existente). Si la fecha es distinta, o uno está vencido, va en fila aparte. Al EDITAR nunca se fusiona.
-R3. Lista ordenada por fecha de vencimiento (más próxima primero; empate por nombre). "Próximo a vencer" = vence en 0 a 5 días: se destaca con color y texto.
+R3. Lista ordenada por fecha de vencimiento (más próxima primero; empate por nombre). "Próximo a vencer" = vence en 0 a 3 días (decisión 17): se destaca con color y texto.
 R4. Vencidos (fecha anterior a hoy) en sección aparte "Vencidos", en rojo, y EXCLUIDOS de las sugerencias de recetas.
 R5. Sugerir recetas que usan al menos 1 ingrediente presente y no vencido (aunque no alcance la cantidad). Orden: primero las que usan algún próximo a vencer (el de menos días primero), luego menos faltantes, luego orden original.
 R6. Para cada receta: mostrar lo que usa y los faltantes. Faltante = no está, solo está vencido o unidad no compatible. La cantidad disponible es la suma (convertida) de todas las filas no vencidas de ese ingrediente. Si un ingrediente está pero NO alcanza, la receta usa lo que hay ("tomate 1 de 3 unidades"), no cuenta como faltante y los demás ingredientes quedan igual.

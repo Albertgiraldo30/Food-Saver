@@ -85,8 +85,8 @@ check('17. una fila vacía no lanza error', !rompio);
 
 seccion('Estados y textos de vencimiento');
 check('18. hoy es próximo', L.estadoDe({ vence: hoyISO() }) === 'proximo');
-check('19. +5 días es próximo', L.estadoDe({ vence: sumarDias(hoyISO(), 5) }) === 'proximo');
-check('20. +6 días es normal', L.estadoDe({ vence: sumarDias(hoyISO(), 6) }) === 'normal');
+check('19. +3 días es próximo (límite, decisión 17)', L.estadoDe({ vence: sumarDias(hoyISO(), 3) }) === 'proximo');
+check('20. +4 días es normal (verde)', L.estadoDe({ vence: sumarDias(hoyISO(), 4) }) === 'normal');
 check('21. -1 día es vencido', L.estadoDe({ vence: sumarDias(hoyISO(), -1) }) === 'vencido');
 check('22. textos hoy / mañana / en 3 días / ayer', L.textoVence(0) === 'Vence hoy' && L.textoVence(1) === 'Vence mañana' &&
   L.textoVence(3) === 'Vence en 3 días' && L.textoVence(-1) === 'Venció ayer');
@@ -98,6 +98,13 @@ L.agregarIngrediente(d, { nombre: 'Tomate', cantidad: -3, unidad: 'unidades', ve
 check('23. el tomate original queda intacto (4)', d.find(i => i.id === 's1').cantidad === 4);
 
 const casosOriginales = bien + mal;
+
+seccion('Decisión 17: próximo = 0 a 3 días');
+check('decisión 17: receta con ingrediente a 4 días no es urgente', (() => {
+  const ev = L.evaluarReceta(L.RECETAS[5], [
+    { id: 'b', nombre: 'banano', cantidad: 2, unidad: 'unidades', vence: sumarDias(hoyISO(), 4) },
+    { id: 'l', nombre: 'leche', cantidad: 1, unidad: 'l', vence: sumarDias(hoyISO(), 4) }]);
+  return !ev.usaProximo; })());
 
 /* ============ Casos nuevos de logica.js ============ */
 
