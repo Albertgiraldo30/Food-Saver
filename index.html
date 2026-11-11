@@ -18,6 +18,8 @@
     .receta { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; }
     .receta h3 { margin: 4px 0; }
     .receta p { margin: 4px 0; }
+    .error { color: #b91c1c; font-size: 0.9em; min-height: 1em; }
+    .invalido { border: 2px solid #b91c1c; }
     .aviso { background: #fef3c7; border: 1px solid #b45309; padding: 8px; border-radius: 6px; }
   </style>
 </head>
@@ -33,18 +35,22 @@
       <h2>Agregar ingrediente</h2>
       <form id="form-ingrediente" novalidate>
         <label>Nombre
-          <input id="campo-nombre" type="text" autocomplete="off">
+          <input id="campo-nombre" type="text" autocomplete="off" aria-describedby="error-nombre">
+          <span class="error" id="error-nombre" aria-live="polite"></span>
         </label>
         <label>Cantidad
-          <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off">
+          <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-cantidad">
+          <span class="error" id="error-cantidad" aria-live="polite"></span>
         </label>
         <label>Unidad
-          <select id="campo-unidad">
+          <select id="campo-unidad" aria-describedby="error-unidad">
             <option value="">Selecciona</option>
           </select>
+          <span class="error" id="error-unidad" aria-live="polite"></span>
         </label>
         <label>Fecha de vencimiento
-          <input id="campo-fecha" type="date">
+          <input id="campo-fecha" type="date" aria-describedby="error-fecha">
+          <span class="error" id="error-fecha" aria-live="polite"></span>
         </label>
         <button type="submit" id="boton-enviar">Agregar</button>
         <button type="button" id="boton-cancelar" hidden>Cancelar</button>
@@ -213,22 +219,63 @@
 
     let editandoId = null; // id del ingrediente que se está editando, o null si se está agregando
 
+    // Campo de cada error que devuelve validarIngrediente (en el orden del formulario).
+    const CAMPOS = [
+      { clave: 'nombre',   campo: campoNombre,   error: document.getElementById('error-nombre') },
+      { clave: 'cantidad', campo: campoCantidad, error: document.getElementById('error-cantidad') },
+      { clave: 'unidad',   campo: campoUnidad,   error: document.getElementById('error-unidad') },
+      { clave: 'fecha',    campo: campoFecha,    error: document.getElementById('error-fecha') }
+    ];
+
+    function limpiarError(c) {
+      c.error.textContent = '';
+      c.campo.classList.remove('invalido');
+      c.campo.removeAttribute('aria-invalid');
+    }
+
+    // Muestra cada error junto a su campo y pone el foco en el primero.
+    function mostrarErrores(errores) {
+      let primero = null;
+      for (const c of CAMPOS) {
+        limpiarError(c);
+        if (errores[c.clave]) {
+          c.error.textContent = errores[c.clave];
+          c.campo.classList.add('invalido');
+          c.campo.setAttribute('aria-invalid', 'true');
+          if (!primero) primero = c.campo;
+        }
+      }
+      if (primero) primero.focus();
+    }
+
+    // Al corregir un campo se borra su error.
+    for (const c of CAMPOS) {
+      c.campo.addEventListener('input', () => limpiarError(c));
+      c.campo.addEventListener('change', () => limpiarError(c));
+    }
+
     function salirDeEdicion() {
       editandoId = null;
       botonEnviar.textContent = 'Agregar';
       botonCancelar.hidden = true;
       form.reset();
+      CAMPOS.forEach(limpiarError);
     }
 
     form.addEventListener('submit', evento => {
       evento.preventDefault();
-      // Sin mensajes de error todavía (capa 4).
-      const datos = {
-        nombre: campoNombre.value.trim(),
-        cantidad: redondear(Number(campoCantidad.value)),
+      const resultado = validarIngrediente({
+        nombre: campoNombre.value,
+        cantidad: campoCantidad.value,
         unidad: campoUnidad.value,
         vence: campoFecha.value
-      };
+      }, despensa, Boolean(editandoId));
+      if (!resultado.ok) {
+        // Con errores no se guarda ni se limpia el formulario.
+        mostrarErrores(resultado.errores);
+        return;
+      }
+      const datos = resultado.datos;
       if (editandoId) {
         // Al editar nunca se fusiona.
         const ing = despensa.find(i => i.id === editandoId);
@@ -260,6 +307,7 @@
         if (editandoId === ing.id) salirDeEdicion();
         render();
       } else if (boton.dataset.accion === 'editar') {
+        CAMPOS.forEach(limpiarError);
         editandoId = ing.id;
         campoNombre.value = ing.nombre;
         campoCantidad.value = ing.cantidad;

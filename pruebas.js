@@ -117,6 +117,33 @@ check('10000 => válido', v('10000').ok && v('10000').valor === 10000);
 check('0.5 => válido', v('0.5').ok && v('0.5').valor === 0.5);
 check('"1,5" => 1.5', v('1,5').ok && v('1,5').valor === 1.5);
 
+seccion('Capa 4: validarIngrediente y validarFecha');
+const ok = { nombre: 'Yogur', cantidad: '2', unidad: 'unidades', vence: sumarDias(hoyISO(), 3) };
+const vi = (cambios, lista = [], editando = false) => L.validarIngrediente({ ...ok, ...cambios }, lista, editando);
+check('datos correctos => ok', vi({}).ok);
+const vacio = L.validarIngrediente({ nombre: '', cantidad: '', unidad: '', vence: '' }, [], false);
+check('formulario vacío => 4 errores', !vacio.ok && Object.keys(vacio.errores).length === 4);
+check('nombre solo con espacios => error de nombre', vi({ nombre: '   ' }).errores.nombre !== undefined);
+check('nombre se guarda sin espacios sobrantes', vi({ nombre: '  Pan   de  yuca ' }).datos.nombre === 'Pan de yuca');
+check('cantidad "-2" => error de cantidad', vi({ cantidad: '-2' }).errores.cantidad !== undefined);
+check('cantidad "1,5" => 1.5', vi({ cantidad: '1,5' }).datos.cantidad === 1.5);
+check('unidad "zz" => error de unidad', vi({ unidad: 'zz' }).errores.unidad !== undefined);
+check('fecha pasada => válida (va a Vencidos)', vi({ vence: sumarDias(hoyISO(), -1) }).ok);
+check('fecha = hoy + 5 años => válida', vi({ vence: L.fechaMaxima() }).ok);
+check('fecha = hoy + 5 años + 1 día => error', vi({ vence: sumarDias(L.fechaMaxima(), 1) }).errores.fecha !== undefined);
+check('fecha 2026-02-30 => error (no existe)', !L.validarFecha('2026-02-30').ok);
+check('fecha vacía => error', !L.validarFecha('').ok);
+check('nombre <b> se acepta como texto', vi({ nombre: '<b>Pan</b>' }).ok);
+const conArroz = [{ id: 'r', nombre: 'Arroz', cantidad: 1, unidad: 'kg', vence: sumarDias(hoyISO(), 180) }];
+check('tope tras fusionar: arroz 9999.5 kg + 1 kg => error',
+  vi({ nombre: 'arroz', cantidad: '9999.5', unidad: 'kg', vence: sumarDias(hoyISO(), 180) }, conArroz).errores.cantidad !== undefined);
+check('tope tras fusionar: arroz 9999 kg + 1 kg = 10000 => válido',
+  vi({ nombre: 'arroz', cantidad: '9999', unidad: 'kg', vence: sumarDias(hoyISO(), 180) }, conArroz).ok);
+check('al editar no se revisa el tope de fusión',
+  vi({ nombre: 'arroz', cantidad: '9999.5', unidad: 'kg', vence: sumarDias(hoyISO(), 180) }, conArroz, true).ok);
+check('con otra fecha no hay fusión ni tope',
+  vi({ nombre: 'arroz', cantidad: '9999.5', unidad: 'kg', vence: sumarDias(hoyISO(), 10) }, conArroz).ok);
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);

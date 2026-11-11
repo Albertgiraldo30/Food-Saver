@@ -195,6 +195,68 @@ function validarCantidad(texto) {
   return { ok: true, valor: redondear(valor) };
 }
 
+/* ===================== Validación del formulario ===================== */
+
+const ANOS_MAXIMOS = 5; // la fecha de vencimiento puede ser como máximo hoy + 5 años
+
+// Hoy + 5 años como 'YYYY-MM-DD' (si hoy es 29 de febrero, pasa al 1 de marzo).
+function fechaMaxima() {
+  const [a, m, d] = hoyISO().split('-').map(Number);
+  const f = new Date(a + ANOS_MAXIMOS, m - 1, d);
+  return f.getFullYear() + '-' + dosDigitos(f.getMonth() + 1) + '-' + dosDigitos(f.getDate());
+}
+
+// true si 'YYYY-MM-DD' es una fecha que existe en el calendario (rechaza 2026-02-30).
+function fechaReal(texto) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(texto))) return false;
+  const [a, m, d] = texto.split('-').map(Number);
+  const f = new Date(a, m - 1, d);
+  return f.getFullYear() === a && f.getMonth() === m - 1 && f.getDate() === d;
+}
+
+// Valida la fecha de vencimiento. Se permiten fechas pasadas (van a Vencidos).
+function validarFecha(texto) {
+  if (!texto) return { ok: false, error: 'Elige la fecha de vencimiento.' };
+  if (!fechaReal(texto)) return { ok: false, error: 'La fecha no es válida.' };
+  if (texto > fechaMaxima()) {
+    return { ok: false, error: 'La fecha no puede ser más de ' + ANOS_MAXIMOS + ' años después de hoy.' };
+  }
+  return { ok: true, valor: texto };
+}
+
+// Valida los datos del formulario (crudos, como texto). Una sola función para agregar y editar.
+// Al agregar (editando = false) también revisa que el total tras fusionar no pase de 10000.
+// Devuelve { ok, errores: { nombre?, cantidad?, unidad?, fecha? }, datos }.
+function validarIngrediente(crudos, lista, editando) {
+  const errores = {};
+  const nombre = String(crudos.nombre == null ? '' : crudos.nombre).trim().replace(/\s+/g, ' ');
+  if (nombre === '') errores.nombre = 'Escribe el nombre del ingrediente.';
+
+  const cantidad = validarCantidad(crudos.cantidad);
+  if (!cantidad.ok) errores.cantidad = cantidad.error;
+
+  if (!crudos.unidad) errores.unidad = 'Elige una unidad.';
+  else if (!UNIDADES[crudos.unidad]) errores.unidad = 'Unidad no permitida.';
+
+  const fecha = validarFecha(crudos.vence);
+  if (!fecha.ok) errores.fecha = fecha.error;
+
+  const datos = { nombre, cantidad: cantidad.valor, unidad: crudos.unidad, vence: crudos.vence };
+
+  if (Object.keys(errores).length === 0 && !editando) {
+    const existente = buscarFusion(lista, datos);
+    if (existente) {
+      const total = redondear(existente.cantidad + convertir(datos.cantidad, datos.unidad, existente.unidad));
+      if (total > CANTIDAD_MAXIMA) {
+        errores.cantidad = 'Ya tienes ' + existente.cantidad + ' ' + existente.unidad + ' con esa fecha; ' +
+          'el total (' + total + ' ' + existente.unidad + ') pasaría de ' + CANTIDAD_MAXIMA + '.';
+      }
+    }
+  }
+
+  return { ok: Object.keys(errores).length === 0, errores, datos };
+}
+
 /* ===================== Despensa ===================== */
 
 function nuevoId() {
@@ -233,12 +295,18 @@ function separarVencidos(lista) {
 
 // Agrega "nuevo" a la lista (la modifica). Si existe uno con el mismo nombre, tipo de unidad y
 // MISMA fecha, suma la cantidad convertida a la unidad existente. Solo fusiona filas válidas.
-function agregarIngrediente(lista, nuevo) {
-  const existente = filaValida(nuevo) && lista.find(ing =>
+// Fila existente con la que se fusionaría "nuevo" (mismo nombre, tipo de unidad y fecha), o null.
+function buscarFusion(lista, nuevo) {
+  if (!filaValida(nuevo)) return null;
+  return lista.find(ing =>
     filaValida(ing) &&
     mismoNombre(ing.nombre, nuevo.nombre) &&
     UNIDADES[ing.unidad].tipo === UNIDADES[nuevo.unidad].tipo &&
-    ing.vence === nuevo.vence);
+    ing.vence === nuevo.vence) || null;
+}
+
+function agregarIngrediente(lista, nuevo) {
+  const existente = buscarFusion(lista, nuevo);
   if (existente) {
     existente.cantidad = redondear(existente.cantidad + convertir(nuevo.cantidad, nuevo.unidad, existente.unidad));
     return existente;
@@ -365,7 +433,8 @@ if (typeof module !== 'undefined' && module.exports) {
     limpiarTexto, normalizar, formasNombre, mismoNombre,
     hoyISO, sumarDias, diasPara, estadoDe, textoVence,
     redondear, aBase, convertir, validarCantidad,
-    nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, agregarIngrediente,
+    ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
+    nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas,
     filaGuardadaValida, recetaValida, serializar, deserializar
   };
