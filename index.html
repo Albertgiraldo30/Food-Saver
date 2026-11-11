@@ -12,6 +12,12 @@
     ul { padding-left: 20px; }
     li { margin: 4px 0; }
     .vacio { color: #666; font-style: italic; }
+    li button { margin-left: 8px; }
+    .proximo { color: #b45309; font-weight: 600; }
+    .vencido { color: #b91c1c; }
+    .receta { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; }
+    .receta h3 { margin: 4px 0; }
+    .receta p { margin: 4px 0; }
   </style>
 </head>
 <body>
@@ -38,7 +44,8 @@
         <label>Fecha de vencimiento
           <input id="campo-fecha" type="date">
         </label>
-        <button type="submit">Agregar</button>
+        <button type="submit" id="boton-enviar">Agregar</button>
+        <button type="button" id="boton-cancelar" hidden>Cancelar</button>
       </form>
     </section>
 
@@ -214,11 +221,88 @@
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    function redondear(n) { return Math.round(n * 100) / 100; }
+
+    // 'vencido' (antes de hoy), 'proximo' (0 a 5 días) o 'normal'.
+    function estadoDe(ing) {
+      const d = diasPara(ing.vence);
+      if (d < 0) return 'vencido';
+      if (d <= 5) return 'proximo';
+      return 'normal';
+    }
+
+    // Texto legible del vencimiento según los días que faltan.
+    function textoVence(dias) {
+      if (dias < -1) return 'Venció hace ' + (-dias) + ' días';
+      if (dias === -1) return 'Venció ayer';
+      if (dias === 0) return 'Vence hoy';
+      if (dias === 1) return 'Vence mañana';
+      return 'Vence en ' + dias + ' días';
+    }
+
+    // Una fila sirve para las recetas solo si tiene unidad conocida, fecha y cantidad válidas
+    // (hasta la capa 4 el formulario puede dejar pasar filas incompletas).
+    function filaValida(ing) {
+      return Boolean(UNIDADES[ing.unidad]) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(ing.vence) &&
+        Number.isFinite(ing.cantidad) && ing.cantidad > 0;
+    }
+
     /* ===================== 3. Almacenamiento ===================== */
     // Capa 3: cargar() y guardar() con localStorage. Por ahora el estado vive solo en memoria.
 
     /* ===================== 4. Recetas ===================== */
-    // Capa 2B: evaluarReceta() y sugerirRecetas().
+
+    // Compara una receta con la despensa. Para cada ingrediente de la receta suma
+    // (convertidas) todas las filas NO vencidas del mismo nombre y tipo de unidad.
+    function evaluarReceta(receta, lista) {
+      const disponibles = [];
+      const faltantes = [];
+      let presentes = 0;
+      let diasUrgente = Infinity;
+      let urgente = null;
+
+      for (const req of receta.ingredientes) {
+        const pedido = aBase(req.cantidad, req.unidad);
+        const filas = lista.filter(ing => filaValida(ing) && mismoNombre(ing.nombre, req.nombre));
+        const noVencidas = filas.filter(ing => diasPara(ing.vence) >= 0);
+        const compatibles = noVencidas.filter(ing => UNIDADES[ing.unidad].tipo === pedido.tipo);
+
+        if (compatibles.length === 0) {
+          let motivo = 'no está';
+          if (filas.length > 0 && noVencidas.length === 0) motivo = 'vencido';
+          else if (noVencidas.length > 0) motivo = 'unidad no compatible';
+          faltantes.push({ nombre: req.nombre, motivo });
+          continue;
+        }
+
+        // Presente: cuenta para mostrar la receta y para su urgencia aunque no alcance.
+        presentes++;
+        const diasMin = Math.min(...compatibles.map(ing => diasPara(ing.vence)));
+        if (diasMin < diasUrgente) { diasUrgente = diasMin; urgente = req.nombre; }
+
+        const total = compatibles.reduce((suma, ing) => suma + aBase(ing.cantidad, ing.unidad).valor, 0);
+        if (total + 1e-9 >= pedido.valor) disponibles.push({ nombre: req.nombre });
+        else faltantes.push({ nombre: req.nombre, motivo: 'no alcanza' });
+      }
+
+      return { receta, disponibles, faltantes, presentes, diasUrgente, urgente,
+               usaProximo: diasUrgente <= 5 };
+    }
+
+    // Recetas con al menos 1 ingrediente presente, ordenadas por: usa algún próximo a vencer,
+    // menos días del más urgente (solo entre las que usan próximos), menos faltantes, orden original.
+    function sugerirRecetas(lista) {
+      return RECETAS
+        .map(r => evaluarReceta(r, lista))
+        .filter(ev => ev.presentes > 0)
+        .sort((a, b) => {
+          if (a.usaProximo !== b.usaProximo) return a.usaProximo ? -1 : 1;
+          if (a.usaProximo && a.diasUrgente !== b.diasUrgente) return a.diasUrgente - b.diasUrgente;
+          if (a.faltantes.length !== b.faltantes.length) return a.faltantes.length - b.faltantes.length;
+          return a.receta.id - b.receta.id;
+        });
+    }
 
     /* ===================== 5. Validación ===================== */
     // Capa 4: validar().
@@ -236,28 +320,80 @@
     /* ===================== 6. Render ===================== */
 
     const listaDespensa = document.getElementById('lista-despensa');
+    const listaVencidos = document.getElementById('lista-vencidos');
+    const listaRecetas = document.getElementById('lista-recetas');
 
     function ordenarPorVencimiento(lista) {
       return [...lista].sort((a, b) =>
         a.vence.localeCompare(b.vence) || a.nombre.localeCompare(b.nombre, 'es'));
     }
 
-    function render() {
-      listaDespensa.replaceChildren();
-      const ordenada = ordenarPorVencimiento(despensa);
+    function crearTexto(etiqueta, texto, clase) {
+      const el = document.createElement(etiqueta);
+      el.textContent = texto;
+      if (clase) el.className = clase;
+      return el;
+    }
 
-      if (ordenada.length === 0) {
-        const vacio = document.createElement('li');
-        vacio.className = 'vacio';
-        vacio.textContent = 'No hay ingredientes.';
-        listaDespensa.appendChild(vacio);
-      } else {
-        for (const ing of ordenada) {
-          const li = document.createElement('li');
-          li.textContent = ing.nombre + ' — ' + ing.cantidad + ' ' + ing.unidad + ' — vence ' + ing.vence;
-          listaDespensa.appendChild(li);
-        }
+    function crearBoton(texto, accion, id) {
+      const b = crearTexto('button', texto);
+      b.type = 'button';
+      b.dataset.accion = accion;
+      b.dataset.id = id;
+      return b;
+    }
+
+    // Fila de ingrediente con sus botones Editar y Eliminar.
+    function crearFila(ing) {
+      const estado = estadoDe(ing);
+      const li = document.createElement('li');
+      if (estado !== 'normal') li.className = estado;
+      const dias = diasPara(ing.vence);
+      const vence = Number.isFinite(dias) ? textoVence(dias) + ' (' + ing.vence + ')' : 'sin fecha';
+      li.appendChild(crearTexto('span', ing.nombre + ' — ' + ing.cantidad + ' ' + ing.unidad + ' — ' + vence));
+      li.appendChild(crearBoton('Editar', 'editar', ing.id));
+      li.appendChild(crearBoton('Eliminar', 'eliminar', ing.id));
+      return li;
+    }
+
+    function pintarLista(contenedor, filas, textoVacio) {
+      contenedor.replaceChildren();
+      if (filas.length === 0) {
+        contenedor.appendChild(crearTexto('li', textoVacio, 'vacio'));
+        return;
       }
+      for (const ing of filas) contenedor.appendChild(crearFila(ing));
+    }
+
+    function pintarRecetas() {
+      listaRecetas.replaceChildren();
+      const sugeridas = sugerirRecetas(despensa);
+      if (sugeridas.length === 0) {
+        listaRecetas.appendChild(crearTexto('p', 'No hay recetas con tus ingredientes disponibles.', 'vacio'));
+        return;
+      }
+      for (const ev of sugeridas) {
+        const tarjeta = document.createElement('article');
+        tarjeta.className = 'receta';
+        tarjeta.appendChild(crearTexto('h3', ev.receta.nombre));
+        if (ev.usaProximo) {
+          tarjeta.appendChild(crearTexto('p',
+            'Aprovecha: ' + ev.urgente + ' (' + textoVence(ev.diasUrgente).toLowerCase() + ')', 'proximo'));
+        }
+        const tienes = ev.disponibles.map(d => d.nombre).join(', ') || 'ninguno completo';
+        tarjeta.appendChild(crearTexto('p', 'Tienes: ' + tienes));
+        const falta = ev.faltantes.map(f => f.nombre + ' (' + f.motivo + ')').join(', ') || 'nada';
+        tarjeta.appendChild(crearTexto('p', 'Te falta: ' + falta));
+        tarjeta.appendChild(crearTexto('p', 'Preparación: ' + ev.receta.preparacion));
+        listaRecetas.appendChild(tarjeta);
+      }
+    }
+
+    function render() {
+      const ordenada = ordenarPorVencimiento(despensa);
+      pintarLista(listaDespensa, ordenada.filter(ing => estadoDe(ing) !== 'vencido'), 'No hay ingredientes.');
+      pintarLista(listaVencidos, ordenada.filter(ing => estadoDe(ing) === 'vencido'), 'No hay ingredientes vencidos.');
+      pintarRecetas();
     }
 
     /* ===================== 7. Eventos ===================== */
@@ -267,21 +403,85 @@
     const campoCantidad = document.getElementById('campo-cantidad');
     const campoUnidad = document.getElementById('campo-unidad');
     const campoFecha = document.getElementById('campo-fecha');
+    const botonEnviar = document.getElementById('boton-enviar');
+    const botonCancelar = document.getElementById('boton-cancelar');
+
+    let editandoId = null; // id del ingrediente que se está editando, o null si se está agregando
+
+    // Al agregar: si existe uno con el mismo nombre, tipo de unidad y MISMA fecha, suma la cantidad
+    // convertida a la unidad existente. Si no, crea una fila nueva.
+    function agregarIngrediente(nuevo) {
+      // Solo se fusiona si la fila nueva es válida, para no dañar una fila existente con NaN o negativos.
+      const existente = filaValida(nuevo) && despensa.find(ing =>
+        filaValida(ing) &&
+        mismoNombre(ing.nombre, nuevo.nombre) &&
+        UNIDADES[ing.unidad].tipo === UNIDADES[nuevo.unidad].tipo &&
+        ing.vence === nuevo.vence);
+      if (existente) {
+        const sumado = nuevo.cantidad * UNIDADES[nuevo.unidad].factor / UNIDADES[existente.unidad].factor;
+        existente.cantidad = redondear(existente.cantidad + sumado);
+      } else {
+        despensa.push({ id: nuevoId(), ...nuevo });
+      }
+    }
+
+    function salirDeEdicion() {
+      editandoId = null;
+      botonEnviar.textContent = 'Agregar';
+      botonCancelar.hidden = true;
+      form.reset();
+    }
 
     form.addEventListener('submit', evento => {
       evento.preventDefault();
       // Sin validación todavía (capa 4).
-      despensa.push({
-        id: nuevoId(),
+      const datos = {
         nombre: campoNombre.value.trim(),
-        cantidad: Number(campoCantidad.value),
+        cantidad: redondear(Number(campoCantidad.value)),
         unidad: campoUnidad.value,
         vence: campoFecha.value
-      });
+      };
+      if (editandoId) {
+        // Al editar nunca se fusiona.
+        const ing = despensa.find(i => i.id === editandoId);
+        if (ing) Object.assign(ing, datos);
+      } else {
+        agregarIngrediente(datos);
+      }
+      salirDeEdicion();
       render();
-      form.reset();
       campoNombre.focus();
     });
+
+    botonCancelar.addEventListener('click', () => {
+      salirDeEdicion();
+      campoNombre.focus();
+    });
+
+    // Botones Editar / Eliminar de las listas (delegación de eventos).
+    function alHacerClicEnLista(evento) {
+      const boton = evento.target.closest('button[data-accion]');
+      if (!boton) return;
+      const ing = despensa.find(i => i.id === boton.dataset.id);
+      if (!ing) return;
+
+      if (boton.dataset.accion === 'eliminar') {
+        despensa = despensa.filter(i => i.id !== ing.id);
+        if (editandoId === ing.id) salirDeEdicion();
+        render();
+      } else if (boton.dataset.accion === 'editar') {
+        editandoId = ing.id;
+        campoNombre.value = ing.nombre;
+        campoCantidad.value = ing.cantidad;
+        campoUnidad.value = ing.unidad;
+        campoFecha.value = ing.vence;
+        botonEnviar.textContent = 'Guardar cambios';
+        botonCancelar.hidden = false;
+        campoNombre.focus();
+      }
+    }
+    listaDespensa.addEventListener('click', alHacerClicEnLista);
+    listaVencidos.addEventListener('click', alHacerClicEnLista);
 
     /* ===================== 8. Inicio ===================== */
 
