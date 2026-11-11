@@ -232,6 +232,34 @@ check('parcial: usada inicial = lo disponible (1 tomate de 3)', (() => { const p
   [{ id: 'x', nombre: 'tomate', cantidad: 1, unidad: 'unidades', vence: sumarDias(hoyISO(), 2) }]);
   return p3.items.find(i => i.nombre === 'tomate').usadaInicial === 1; })());
 
+seccion('Paso 3: lista de compras');
+const nombresLista = items => items.map(it => it.nombre + ': ' + it.motivos.join(' + ')).join(' | ');
+let lc = L.generarListaCompras(semilla(), L.RECETAS, []);
+check('sin recetas marcadas: solo el queso vencido', nombresLista(lc) === 'Queso: vencido');
+lc = L.generarListaCompras(semilla(), L.RECETAS, [3, 2]); // Pasta (falta queso) y Arroz con pollo (falta zanahoria)
+check('con Pasta y Arroz con pollo marcadas: queso (vencido + para Pasta) y zanahoria (para Arroz)',
+  nombresLista(lc) === 'Queso: vencido + para receta Pasta con salsa de tomate | zanahoria: para receta Arroz con pollo');
+lc = L.generarListaCompras(semilla(), L.RECETAS, [3, 2, 5, 4]); // + Sopa (zanahoria, arveja) + Ensalada (aguacate, limón)
+check('no repite ingredientes: zanahoria una sola vez con 2 recetas', lc.filter(it => L.mismoNombre(it.nombre, 'zanahoria')).length === 1 &&
+  lc.find(it => it.nombre === 'zanahoria').motivos.length === 2);
+check('ningún nombre repetido en toda la lista', lc.every((it, i) => lc.findIndex(o => L.mismoNombre(o.nombre, it.nombre)) === i));
+let dl = semilla(); L.cocinarReceta(dl, [{ nombre: 'cebolla', cantidad: 3, unidad: 'unidades' }]);
+check('agotado entra a la lista', nombresLista(L.generarListaCompras(dl, L.RECETAS, [])).includes('Cebolla: agotado'));
+dl.push({ id: 'n', nombre: 'Cebollas', cantidad: 2, unidad: 'unidades', vence: sumarDias(hoyISO(), 9) });
+check('agotado NO entra si ya hay de ese ingrediente (plural incluido)', !nombresLista(L.generarListaCompras(dl, L.RECETAS, [])).includes('Cebolla'));
+dl = semilla(); dl.push({ id: 'q', nombre: 'queso', cantidad: 300, unidad: 'g', vence: sumarDias(hoyISO(), 8) });
+check('vencido NO entra si hay queso fresco', L.generarListaCompras(dl, L.RECETAS, []).length === 0);
+dl = [{ id: 't', nombre: 'Tomate', cantidad: 1, unidad: 'unidades', vence: sumarDias(hoyISO(), 2) }];
+check('no alcanza: tomate con "faltan 2 unidades" para Pasta', nombresLista(L.generarListaCompras(dl, L.RECETAS, [3]))
+  .includes('tomate: para receta Pasta con salsa de tomate (faltan 2 unidades)'));
+check('copiar: solo lo pendiente', L.textoListaCompras(L.generarListaCompras(semilla(), L.RECETAS, [3, 2]), ['queso']) ===
+  'Lista de compras (Food Saver)\n- zanahoria (para receta Arroz con pollo)');
+check('copiar: sin pendientes => texto vacío', L.textoListaCompras(L.generarListaCompras(semilla(), L.RECETAS, []), ['Queso']) === '');
+const gc = L.deserializar(L.serializar(semilla(), L.RECETAS, { quiero: [3], comprados: ['zanahoria'] }));
+check('persistencia: quiero y comprados se guardan y se leen', gc.quiero.join() === '3' && gc.comprados.join() === 'zanahoria');
+const gv = L.deserializar(L.serializar(semilla(), L.RECETAS));
+check('datos de antes (sin lista de compras) => quiero y comprados vacíos', gv.quiero.length === 0 && gv.comprados.length === 0);
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);

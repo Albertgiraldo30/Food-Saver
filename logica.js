@@ -491,11 +491,62 @@ function cocinarReceta(lista, usos) {
   return sinDescontar;
 }
 
+/* ===================== Lista de compras ===================== */
+
+// true si hay algo de ese ingrediente que se pueda usar (válido y no vencido), en cualquier unidad.
+function hayDisponible(lista, nombre) {
+  return lista.some(ing => filaValida(ing) && diasPara(ing.vence) >= 0 && mismoNombre(ing.nombre, nombre));
+}
+
+// Genera la lista de compras (sin repetir ingredientes) a partir de:
+//  a) agotados (cantidad 0), b) vencidos, c) faltantes de las recetas marcadas "Quiero hacerla"
+//     (incluye lo que está pero no alcanza, con la cantidad que falta).
+// Un agotado o vencido no entra si todavía hay ese ingrediente disponible.
+// Si un ingrediente aparece por varios motivos, queda una sola línea con todos los motivos.
+// Devuelve [{ nombre, motivos: [texto, ...] }] en el orden en que aparecen.
+function generarListaCompras(lista, recetas = RECETAS, quiero = []) {
+  const items = [];
+  function sumar(nombre, motivo) {
+    let item = items.find(it => mismoNombre(it.nombre, nombre));
+    if (!item) { item = { nombre, motivos: [] }; items.push(item); }
+    if (!item.motivos.includes(motivo)) item.motivos.push(motivo);
+  }
+  for (const ing of ordenarPorVencimiento(lista)) {
+    if (filaAgotada(ing) && !hayDisponible(lista, ing.nombre)) sumar(ing.nombre, 'agotado');
+    else if (filaValida(ing) && diasPara(ing.vence) < 0 && !hayDisponible(lista, ing.nombre)) sumar(ing.nombre, 'vencido');
+  }
+  for (const id of quiero) {
+    const receta = recetas.find(r => r.id === id);
+    if (!receta) continue;
+    const ev = evaluarReceta(receta, lista);
+    for (const f of ev.faltantes) sumar(f.nombre, 'para receta ' + receta.nombre);
+    for (const p of ev.parciales) {
+      const falta = redondear(p.pide - p.tiene);
+      sumar(p.nombre, 'para receta ' + receta.nombre + ' (faltan ' + formatoCantidad(falta, p.unidad) + ')');
+    }
+  }
+  return items;
+}
+
+// true si el ingrediente está marcado como comprado (comprados = nombres marcados).
+function estaComprado(nombre, comprados) {
+  return comprados.some(c => mismoNombre(c, nombre));
+}
+
+// Texto plano para copiar: SOLO lo pendiente (no comprado).
+function textoListaCompras(items, comprados = []) {
+  const pendientes = items.filter(it => !estaComprado(it.nombre, comprados));
+  if (pendientes.length === 0) return '';
+  return 'Lista de compras (Food Saver)\n' +
+    pendientes.map(it => '- ' + it.nombre + ' (' + it.motivos.join('; ') + ')').join('\n');
+}
+
 /* ===================== Persistencia (parte pura) ===================== */
 
 // Texto que se guarda en localStorage.
-function serializar(ingredientes, recetas) {
-  return JSON.stringify({ version: 1, ingredientes, recetas });
+// compras: { quiero: [ids de recetas marcadas], comprados: [nombres marcados como comprados] }.
+function serializar(ingredientes, recetas, compras = { quiero: [], comprados: [] }) {
+  return JSON.stringify({ version: 1, ingredientes, recetas, quiero: compras.quiero, comprados: compras.comprados });
 }
 
 // Fila de despensa leída de localStorage: id y nombre de texto + filaValida (unidad, fecha, cantidad).
@@ -528,7 +579,10 @@ function deserializar(texto) {
       ingredientes,
       recetas: recetasOk ? datos.recetas : RECETAS,
       descartados: datos.ingredientes.length - ingredientes.length,
-      recetasRestablecidas: !recetasOk
+      recetasRestablecidas: !recetasOk,
+      // Lista de compras: si faltan o están dañadas, quedan vacías (datos de versiones anteriores).
+      quiero: Array.isArray(datos.quiero) ? datos.quiero.filter(id => Number.isInteger(id)) : [],
+      comprados: Array.isArray(datos.comprados) ? datos.comprados.filter(n => typeof n === 'string') : []
     };
   } catch (e) {
     return null;
@@ -546,6 +600,7 @@ if (typeof module !== 'undefined' && module.exports) {
     ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
     nuevoId, crearSemilla, filaValida, filaAgotada, filasParaUsar, prepararCocina, validarUso, cocinarReceta, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas, resumen,
+    hayDisponible, generarListaCompras, estaComprado, textoListaCompras,
     filaGuardadaValida, recetaValida, serializar, deserializar
   };
 }
