@@ -2,7 +2,7 @@
 
 **Reto:** aprovechar los ingredientes antes de que venzan (Prompt & Solve, ITM)
 **Código y documentos:** https://github.com/Albertgiraldo30/Food-Saver
-**Para probarla:** doble clic en `index.html`. Para ver las pruebas: `node pruebas.js` (117 de 117 pasan).
+**Para probarla:** doble clic en `index.html`. Para ver las pruebas: `node pruebas.js` (119 de 119 pasan).
 
 ---
 
@@ -120,7 +120,7 @@ Todos los errores, con su causa y su corrección, están en `PROCESO.md`.
 
 No nos quedamos con "parece que funciona". Esto es lo que hicimos:
 
-- **117 pruebas automáticas.** Corren con un solo comando. Cubren el orden de las recetas, las fusiones, las conversiones, las validaciones, el guardado, la cocina y la lista de compras.
+- **119 pruebas automáticas.** Corren con un solo comando. Cubren el orden de las recetas, las fusiones, las conversiones, las validaciones, el guardado, la cocina y la lista de compras.
 - **Comprobamos que las pruebas sirven.** Cambiamos a propósito el valor de la libra y el umbral de "próximo", y fallaron exactamente las pruebas que tenían que fallar.
 - **Más de 60 escenarios simulados en Chrome.** Llenar el formulario mal, abrir y cerrar ventanas, cocinar, recargar la página. Tras cada cambio repetíamos los anteriores para asegurarnos de no romper nada. Siempre terminaron con cero errores.
 - **Siete revisiones del revisor:** una por capa, una para las mejoras y una revisión completa al final. Cada vez corregimos todo lo que marcó como importante.

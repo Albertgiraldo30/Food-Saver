@@ -13,7 +13,7 @@ Informe para el jurado: [INFORME.md](INFORME.md) · Evidencias del trabajo con e
 Aviso: los datos de `file://` (doble clic) y de Live Server (`http://127.0.0.1`) se guardan por separado. Usa siempre la misma forma.
 
 ## Cómo correr las pruebas
-Con Node.js instalado, en la carpeta del proyecto: `node pruebas.js` → debe terminar con **117 bien, 0 mal**.
+Con Node.js instalado, en la carpeta del proyecto: `node pruebas.js` → debe terminar con **119 bien, 0 mal**.
 
 ## Qué hace
 - **Agregar** ingrediente (nombre, cantidad, unidad, fecha). Errores bajo cada campo y toast rojo; nunca `alert()`.
@@ -51,7 +51,7 @@ queso 200 g (vencido ayer), tomate 4 unidades (+1 día), leche 1 l (+2), pechuga
 ## Archivos
 - `index.html`: pantalla y persistencia (localStorage, clave `foodsaver.v1`).
 - `logica.js`: constantes y funciones puras (validaciones, recetas, cocinar, lista de compras). También funciona en Node.
-- `pruebas.js`: 117 pruebas de `logica.js`.
+- `pruebas.js`: 119 pruebas de `logica.js`.
 - `CLAUDE.md` (requisitos R1–R10), `PLAN.md` (capas y decisiones 1–25), `PROCESO.md`, `INFORME.md`, `ENUNCIADO.md`.
 
 ## Empezar de cero
