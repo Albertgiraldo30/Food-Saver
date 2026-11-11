@@ -25,6 +25,11 @@ Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas, más 3 tan
 - Un comentario del HTML contenía la palabra `alert(` y daba un falso positivo en la búsqueda de `alert(`: se reescribió.
 - Al cambiar los ids del formulario, los scripts de prueba del agente dejaron de funcionar (salida vacía): se actualizaron y se volvieron a correr.
 
+### Cambio de regla: productos nuevos vencidos
+- Pedido del equipo: "el programa no acepte productos vencidos". El agente iba a preguntar el alcance; el equipo lo aclaró: los que ya están pasan a Vencidos, pero los nuevos deben tener una fecha válida. El agente interpretó que hoy sí se acepta (algo que vence hoy no está vencido) y lo informó.
+- validarIngrediente rechaza al agregar una fecha anterior a hoy; al editar se permite. El calendario de Agregar ya no ofrece días pasados. 3 pruebas nuevas (119/119); en Chrome: limón de ayer rechazado, aguacate de hoy aceptado, editar Leche a una fecha pasada la lleva a Vencidos, el queso de ejemplo sigue en Vencidos; regresiones sin errores.
+- La prueba vieja "fecha pasada => válida" se cambió: ahora documenta la regla nueva.
+
 ### Verificación de estas tandas
 - `node pruebas.js` después de cada paso: 82 → 83 → 86 → 88 → 102 → 114 → 117, siempre sin fallas.
 - Chrome sin ventana con clics simulados en cada paso: modal (17 escenarios), toasts (incluido que desaparecen entre 2.9 y 3.1 s), acabado (duraciones de 0.2 s, solo se anima lo nuevo), cocinar (12 − 5 = 7 huevos guardado, cebolla a Agotados, 1 l − 240 ml = 0.76 l), lista de compras (con recarga), recetas en vivo. Tras cada cambio se repitieron los escenarios anteriores: 0 errores de JavaScript.

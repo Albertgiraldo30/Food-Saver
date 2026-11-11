@@ -33,15 +33,15 @@ Con Node.js instalado, en la carpeta del proyecto: `node pruebas.js` → debe te
 ## Flujo de la demo
 1. Pulsa **Restaurar datos de ejemplo**.
 2. Agrega `aguacate, 1, unidades, hoy` → sube como PRÓXIMO.
-3. Agrega `limón, 2, unidades, ayer` → va a Vencidos.
+3. Intenta agregar `limón, 2, unidades, ayer` → se rechaza: un producto nuevo no puede estar vencido.
 4. Intenta cantidad `-2` → se rechaza con error junto al campo.
-5. La primera receta es **Ensalada de aguacate** ("Aprovecha: aguacate", "Te falta: limón (vencido)"). Pulsa **Quiero hacerla**.
+5. La primera receta es **Ensalada de aguacate** ("Aprovecha: aguacate", "Te falta: limón (no está)"). Pulsa **Quiero hacerla**.
 6. Cocina **Huevos pericos** con 5 huevos → "Inventario actualizado".
 7. F5: todo sigue ahí.
 
 ## Reglas
 - Cantidad: mayor que 0 (mínimo 0.01) y hasta 10 000, con punto o coma. Al fusionar, el total tampoco pasa de 10 000.
-- Fecha: obligatoria y real; pasada permitida (va a Vencidos); máximo hoy + 5 años.
+- Fecha: obligatoria y real; un producto nuevo debe vencer hoy o después (al editar se permite una fecha pasada); máximo hoy + 5 años. Lo que ya está en la despensa pasa solo a Vencidos cuando llega su fecha.
 - Nombres: ignoran mayúsculas, tildes, espacios y la "s" o "es" final ("Limones" = "limón").
 - Conversiones: 1 kg = 1000 g; 1 libra = 500 g; 1 l = 1000 ml; 1 taza = 240 ml; 1 cucharada = 15 ml.
 

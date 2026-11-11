@@ -25,7 +25,7 @@ R8. "Cociné esta receta" (decisión 20): botón en cada tarjeta, activo solo si
 - Peso (g, kg, libras) solo con peso; volumen (ml, l, tazas, cucharadas) solo con volumen; "unidades" solo con "unidades". No convertible → faltante.
 
 ## Flujo principal (el que se demuestra en vivo)
-Abrir la app con la despensa precargada → registrar "aguacate, 1, unidades, vence hoy" (sube como próximo a vencer) → registrar "limón, 2, unidades, ayer" (va a Vencidos) e intentar cantidad "-2" (se rechaza con error junto al campo) → en Recetas sugeridas la primera es "Ensalada de aguacate", con faltante limón → F5: todo sigue ahí.
+Abrir la app con la despensa precargada → registrar "aguacate, 1, unidades, vence hoy" (sube como próximo a vencer) → intentar "limón, 2, unidades, ayer" (se rechaza: un producto nuevo no puede estar vencido) e intentar cantidad "-2" (se rechaza con error junto al campo) → en Recetas sugeridas la primera es "Ensalada de aguacate", con faltante limón → F5: todo sigue ahí.
 
 ## Datos de ejemplo (ficticios)
 Despensa precargada solo si la clave de localStorage no existe. Fechas relativas al día de la primera carga:
@@ -52,7 +52,7 @@ Recetas predefinidas (fijas en el código):
 ## Validaciones obligatorias
 - No permitir campos vacíos (nombre, cantidad, unidad, fecha).
 - Cantidad: número > 0 y ≤ 10000; acepta decimales con punto o coma (1,5 = 1.5). Rechazar 0, negativos, texto y mayores a 10000. El tope aplica también al total después de sumar un duplicado.
-- Fecha: obligatoria, válida y como máximo 5 años después de hoy. Se permiten fechas pasadas: el ingrediente va directo a "Vencidos".
+- Fecha: obligatoria, válida y como máximo 5 años después de hoy. Un producto NUEVO no puede tener fecha pasada (hoy sí se acepta); al editar sí se permite. Los que ya están en la despensa pasan solos a "Vencidos" cuando llega su fecha (decisión 26).
 - Unidad: solo de la lista permitida.
 - Mostrar errores en pantalla junto al campo, nunca con alert().
 

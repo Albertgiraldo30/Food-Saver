@@ -67,7 +67,7 @@ Cumplimos todo lo que pedía el enunciado:
 - **Ordenarlos por vencimiento** y destacar los que deben usarse primero.
 - **Sugerir recetas** con lo que hay.
 - **Mostrar qué falta** en cada receta.
-- **Rechazar cantidades inválidas.**
+- **Rechazar cantidades inválidas** y productos nuevos que ya estén vencidos.
 - **Separar los vencidos** y excluirlos de las recetas.
 - **No perder nada al recargar** la página.
 
@@ -149,8 +149,8 @@ Antes de empezar: abrir la app y pulsar **Restaurar datos de ejemplo**.
 
 1. **El problema** (15 s). "Botamos comida porque olvidamos qué vence. Food Saver lleva esa cuenta por nosotros."
 2. **La despensa** (20 s). Arriba dice 4 por vencer, 1 vencido y 7 recetas posibles. El queso vencido está aparte y no cuenta para nada.
-3. **Registrar** (30 s). Agregamos un aguacate que vence hoy: sube primero, en naranja. Luego un limón que venció ayer: se va a Vencidos. Después intentamos poner −2: la app lo rechaza y explica por qué.
-4. **La receta** (25 s). La primera sugerencia ahora es **Ensalada de aguacate**: dice "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (vencido)". Pulsamos "Quiero hacerla" y el limón aparece en la lista de compras.
+3. **Registrar** (30 s). Agregamos un aguacate que vence hoy: sube primero, en naranja. Luego intentamos registrar un limón que venció ayer: la app no lo acepta, porque un producto nuevo no puede estar vencido. Después intentamos poner −2: también lo rechaza y explica por qué. El queso de ejemplo, que se venció estando en la despensa, sí aparece en Vencidos.
+4. **La receta** (25 s). La primera sugerencia ahora es **Ensalada de aguacate**: dice "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (no está)". Pulsamos "Quiero hacerla" y el limón aparece en la lista de compras.
 5. **Cocinar** (20 s). En "Huevos pericos" decimos que usamos 5 huevos. La app descuenta y los huevos bajan de 12 a 7.
 6. **Recargar** (10 s). F5, y todo sigue ahí.
 7. **Cierre** (20 s). Algo que rechazamos y cómo verificamos: el plan que corregimos y la prueba que defendía un error.

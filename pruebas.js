@@ -139,7 +139,9 @@ check('nombre se guarda sin espacios sobrantes', vi({ nombre: '  Pan   de  yuca 
 check('cantidad "-2" => error de cantidad', vi({ cantidad: '-2' }).errores.cantidad !== undefined);
 check('cantidad "1,5" => 1.5', vi({ cantidad: '1,5' }).datos.cantidad === 1.5);
 check('unidad "zz" => error de unidad', vi({ unidad: 'zz' }).errores.unidad !== undefined);
-check('fecha pasada => válida (va a Vencidos)', vi({ vence: sumarDias(hoyISO(), -1) }).ok);
+check('decisión 26: producto nuevo con fecha pasada => rechazado', vi({ vence: sumarDias(hoyISO(), -1) }).errores.fecha === 'Este producto ya está vencido: la fecha debe ser hoy o posterior.');
+check('decisión 26: producto nuevo que vence hoy => aceptado', vi({ vence: hoyISO() }).ok);
+check('decisión 26: al editar se permite fecha pasada (pasa a Vencidos)', vi({ vence: sumarDias(hoyISO(), -1) }, [], true).ok);
 check('fecha = hoy + 5 años => válida', vi({ vence: L.fechaMaxima() }).ok);
 check('fecha = hoy + 5 años + 1 día => error', vi({ vence: sumarDias(L.fechaMaxima(), 1) }).errores.fecha !== undefined);
 check('fecha 2026-02-30 => error (no existe)', !L.validarFecha('2026-02-30').ok);

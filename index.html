@@ -1098,6 +1098,7 @@
 
     /* ===================== Inicio ===================== */
 
+    alta.campos.fecha.min = hoyISO(); // el calendario de Agregar no ofrece fechas pasadas (decisión 26)
     llenarSelectorUnidades(alta.campos.unidad);
     llenarSelectorUnidades(edicion.campos.unidad);
     cargar();

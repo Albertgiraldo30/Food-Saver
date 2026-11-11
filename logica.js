@@ -277,6 +277,9 @@ function validarIngrediente(crudos, lista, editando) {
 
   const fecha = validarFecha(crudos.vence);
   if (!fecha.ok) errores.fecha = fecha.error;
+  // Un producto NUEVO no puede estar vencido (decisión 26). Al editar sí se permite una fecha pasada:
+  // los que ya están en la despensa pasan a Vencidos cuando llega su fecha.
+  else if (!editando && crudos.vence < hoyISO()) errores.fecha = 'Este producto ya está vencido: la fecha debe ser hoy o posterior.';
 
   const datos = { nombre, cantidad: cantidad.valor, unidad: crudos.unidad, vence: crudos.vence };
 
