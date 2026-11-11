@@ -18,12 +18,14 @@
     .receta { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; }
     .receta h3 { margin: 4px 0; }
     .receta p { margin: 4px 0; }
+    .aviso { background: #fef3c7; border: 1px solid #b45309; padding: 8px; border-radius: 6px; }
   </style>
 </head>
 <body>
   <header>
     <h1>Food Saver</h1>
     <p>Usa primero lo que está por vencer.</p>
+    <p id="aviso" class="aviso" role="status" hidden></p>
   </header>
 
   <main>
@@ -68,10 +70,51 @@
   <!-- Lógica pura (constantes, nombres, fechas, conversiones, recetas). Probada con: node pruebas.js -->
   <script src="logica.js"></script>
   <script>
-    /* ===================== Estado ===================== */
+    /* ===================== Estado y persistencia ===================== */
 
-    let despensa = crearSemilla();
+    let despensa = [];
     let recetas = RECETAS;
+    const aviso = document.getElementById('aviso');
+
+    function mostrarAviso(texto) {
+      aviso.textContent = texto;
+      aviso.hidden = false;
+    }
+
+    // Guarda despensa y recetas en localStorage. Si no se puede, avisa en pantalla.
+    function guardar() {
+      try {
+        localStorage.setItem(CLAVE, serializar(despensa, recetas));
+      } catch (e) {
+        mostrarAviso('No se pudieron guardar los cambios en este navegador. Se perderán al recargar.');
+      }
+    }
+
+    // Lee localStorage. Sin datos: despensa de ejemplo (y se guarda). Datos dañados: ejemplo + aviso.
+    function cargar() {
+      let texto = null;
+      try {
+        texto = localStorage.getItem(CLAVE);
+      } catch (e) {
+        mostrarAviso('Este navegador no permite guardar datos. Los cambios se perderán al recargar.');
+        despensa = crearSemilla();
+        return;
+      }
+      if (texto === null) {
+        despensa = crearSemilla();
+        guardar();
+        return;
+      }
+      const datos = deserializar(texto);
+      if (!datos) {
+        mostrarAviso('Los datos guardados estaban dañados. Se cargó la despensa de ejemplo.');
+        despensa = crearSemilla();
+        guardar();
+        return;
+      }
+      despensa = datos.ingredientes;
+      recetas = datos.recetas;
+    }
 
     /* ===================== Render ===================== */
 
@@ -189,6 +232,7 @@
       } else {
         agregarIngrediente(despensa, datos);
       }
+      guardar();
       salirDeEdicion();
       render();
       campoNombre.focus();
@@ -208,6 +252,7 @@
 
       if (boton.dataset.accion === 'eliminar') {
         despensa = despensa.filter(i => i.id !== ing.id);
+        guardar();
         if (editandoId === ing.id) salirDeEdicion();
         render();
       } else if (boton.dataset.accion === 'editar') {
@@ -233,6 +278,7 @@
       campoUnidad.appendChild(opcion);
     }
 
+    cargar();
     render();
   </script>
 </body>

@@ -321,13 +321,16 @@ function serializar(ingredientes, recetas) {
 }
 
 // Lee el texto guardado. Devuelve { ingredientes, recetas } o null si está dañado.
+// Descarta filas sin id o sin nombre (no se podrían pintar ni editar).
 function deserializar(texto) {
   try {
     const datos = JSON.parse(texto);
     if (!datos || !Array.isArray(datos.ingredientes)) return null;
+    const ingredientes = datos.ingredientes.filter(i =>
+      i && typeof i.id === 'string' && typeof i.nombre === 'string');
     const recetasOk = Array.isArray(datos.recetas) && datos.recetas.length > 0 &&
       datos.recetas.every(r => r && typeof r.nombre === 'string' && Array.isArray(r.ingredientes));
-    return { ingredientes: datos.ingredientes, recetas: recetasOk ? datos.recetas : RECETAS };
+    return { ingredientes, recetas: recetasOk ? datos.recetas : RECETAS };
   } catch (e) {
     return null;
   }

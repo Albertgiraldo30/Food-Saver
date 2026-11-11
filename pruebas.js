@@ -143,6 +143,9 @@ check('serializar + deserializar conserva las recetas', leido && JSON.stringify(
 check('despensa vacía guardada sigue vacía', L.deserializar(L.serializar([], L.RECETAS)).ingredientes.length === 0);
 check('JSON dañado "{" => null', L.deserializar('{') === null);
 check('JSON sin ingredientes => null', L.deserializar('{"version":1}') === null);
+check('filas sin id o sin nombre se descartan al leer',
+  L.deserializar('{"version":1,"ingredientes":[null,{"nombre":"x"},{"id":"a"},{"id":"b","nombre":"Tomate"}]}')
+    .ingredientes.length === 1);
 check('recetas guardadas dañadas => usa las predefinidas',
   L.deserializar('{"version":1,"ingredientes":[],"recetas":"x"}').recetas === L.RECETAS);
 
