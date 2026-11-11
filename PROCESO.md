@@ -1,6 +1,35 @@
 # Cómo trabajamos con los agentes
 
-Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas: 1 (Base), 2 (Vencidos y recetas), 3 (Persistencia), 4 (Validaciones) y 5 (Diseño).
+Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas, más 3 tandas de mejoras pedidas por el equipo. `node pruebas.js`: 117/117. El resumen para el jurado está en INFORME.md.
+
+## 0. Después de la capa 5 (mejoras pedidas por el equipo)
+
+### Tareas delegadas, siempre en pasos numerados con "un commit por paso, pruebas en verde, si algo falla detente"
+- **Tanda 1:** restaurar datos de ejemplo con confirmación propia (`28292d1`); colores rojo / naranja / verde y próximo = 0 a 3 días en toda la app (`41a48dd`); resumen arriba (`0a06b8e`); aviso "Guardado" y confirmación al eliminar (`f411a36`). Antes de empezar, el agente preguntó dos cosas que cambiaban reglas acordadas: si los 3 días aplicaban a todo (sí) y qué contaba como "recetas posibles" (todas las sugeridas).
+- **Tanda 2:** nombres completos de unidades con NOMBRES_UNIDAD (`2081398`), modal de edición (`a5e19a1`), toasts (`755cf92`), acabado con transiciones, hover y resaltado (`487a87a`).
+- **Tanda 3:** recetas en vivo (el agente verificó que ya funcionaba y **no cambió nada**), "Cociné esta receta" (`36744ab`) y lista de compras (`7e0e2a7`). Antes de empezar, el agente preguntó 4 cosas: cocinar solo sin faltantes; agotados en sección aparte; lo que no alcanza entra a la lista con lo que falta; copiar solo lo pendiente.
+
+### Resultados refinados o rechazados
+- **Revisor de la tanda 1 (APTO):** 2 MEDIOS corregidos en `6281307`: al restaurar, si fallaba el guardado, el aviso de error se ocultaba; Tab salía de la caja de confirmación. También: foco perdido al eliminar, aviso "Guardado" mezclado con errores, resto de "5 días" en el PLAN.
+- **Revisión completa (APTO):** 4 MEDIOS corregidos en `0d00673`:
+  - Al cocinar, el redondeo a 2 decimales falseaba lo descontado (1 l − 15 ml quedaba 0.99 l; 1.5 kg − 1 g no descontaba). **La prueba que habíamos escrito esperaba 0.99, es decir, protegía el error.** Ahora la fila pasa a la unidad base (985 ml, 1499 g); prueba corregida y 2 casos nuevos.
+  - Recetas guardadas sin id entero y único rompían "Quiero hacerla".
+  - Editar un agotado mostraba "0" y un error confuso: ahora es "Reponer ingrediente" con cantidad vacía.
+  - PLAN.md desactualizado: se agregaron las decisiones 22 a 25 y se marcaron las reemplazadas.
+- El revisor afirmó que la carpeta "no es un repositorio": era falso (sus herramientas no incluyen git). El agente principal no lo tomó como cierto.
+
+### Errores propios del agente en estas tandas
+- Las expresiones regulares de dos funciones nuevas perdieron sus barras invertidas al pasar por la terminal. **Las pruebas fallaron (4)** y lo detectaron; se corrigió con la herramienta de edición y desde entonces los scripts de cambios se escriben en archivos.
+- Al abrir y cerrar el modal se perdía el foco (el botón Editar se vuelve a crear): detectado en la simulación en Chrome; ahora vuelve al botón Editar de la fila.
+- Una prueba de la lista de compras esperaba "Tomate" con mayúscula cuando el nombre viene de la receta ("tomate"): el error estaba en la prueba, no en el código.
+- Un comentario del HTML contenía la palabra `alert(` y daba un falso positivo en la búsqueda de `alert(`: se reescribió.
+- Al cambiar los ids del formulario, los scripts de prueba del agente dejaron de funcionar (salida vacía): se actualizaron y se volvieron a correr.
+
+### Verificación de estas tandas
+- `node pruebas.js` después de cada paso: 82 → 83 → 86 → 88 → 102 → 114 → 117, siempre sin fallas.
+- Chrome sin ventana con clics simulados en cada paso: modal (17 escenarios), toasts (incluido que desaparecen entre 2.9 y 3.1 s), acabado (duraciones de 0.2 s, solo se anima lo nuevo), cocinar (12 − 5 = 7 huevos guardado, cebolla a Agotados, 1 l − 240 ml = 0.76 l), lista de compras (con recarga), recetas en vivo. Tras cada cambio se repitieron los escenarios anteriores: 0 errores de JavaScript.
+- Contraste de los colores nuevos calculado con la fórmula WCAG (toasts 5.1 a 7.6:1).
+- NO verificado: portapapeles real de "Copiar lista" (solo simulado); el probador no se ejecutó.
 
 ## 1. Tarea delegada
 - Instrucción: al subagente `arquitecto` se le pidió el PLAN.md (5 capas, 240 minutos). Como CLAUDE.md aún no estaba guardado en disco, el encargo incluyó ENUNCIADO.md y el borrador completo de CLAUDE.md. CLAUDE.md se había llenado antes, con preguntas de opción múltiple a la usuaria, sin inventar datos. Ella decidió, entre otras cosas: las unidades, libra = 500 g, taza = 240 ml, cucharada = 15 ml, próximo a vencer = 0 a 5 días, cantidad mayor que 0 y hasta 10000 con decimales, vencidos en sección aparte, comparar nombre y cantidad, despensa precargada y 8 recetas propuestas por el agente y aprobadas por ella.
@@ -191,7 +220,7 @@ Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas: 1 (Base), 
 - Commits: db823d6 "Capa 1: base" y 3c5d1b4 "Capa 1: escape de tildes". No se volvió a llamar al revisor después de las correcciones: NO VERIFICADO por un segundo revisor.
 
 ## Pendientes al cierre
-- Decisiones de la usuaria: ¿aceptar ".5"? y los extras P2 (crear o editar recetas, IA, integraciones), además de R8 "Cocinar esta receta".
+- Decisiones pendientes: ¿aceptar ".5"? y los extras P2 (crear o editar recetas, IA, integraciones). R8 "Cocinar esta receta" ya está hecho.
 - Probador: no ejecutado en ninguna capa. NO VERIFICADO.
 - Pruebas manuales de la usuaria: sin registro. NO VERIFICADO.
 - Cierre según la GUIA: probar los pasos del README desde cero, confirmar el último commit y guardar una copia en USB o Drive. PENDIENTE.
@@ -204,3 +233,4 @@ Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas: 1 (Base), 
 - Capa 4, Validaciones: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido; ".5" PENDIENTE de respuesta de la usuaria). Pruebas Node 74/74. 11 escenarios con clics simulados en Edge y repetidos en Chrome (con la persistencia A a E), 0 errores JS, 0 `alert(`. Capturas en Chrome. Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits c88e73e y f12ceba. Documentación guardada en el commit a85f058.
 - Capa 5, Diseño: terminada. Commits 22cf52a y 1bbc5ac. Revisor APTO PARA PRUEBAS (3 hallazgos BAJOS de contraste, foco y edición, corregidos en el commit ae2d843; solo leyó código). Pruebas Node 79/79. Los 11 escenarios de la capa 4 repetidos en Chrome sin ventana, 0 errores JS. Sin desplazamiento horizontal a 1366 px (2 columnas) y a 375 px (1 columna, medido en un marco tras detectar una primera medición inválida de 485 px). Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO.
 - Las 5 capas del PLAN están terminadas. Falta el cierre (ver "Pendientes al cierre").
+- Mejoras posteriores (tandas 1 a 3): hechas. Commits 28292d1 a 7e0e2a7. Revisor APTO en la tanda 1 (2 MEDIOS corregidos en 6281307) y en la revisión completa (4 MEDIOS corregidos en 0d00673). Pruebas 117/117. Probador no ejecutado.
