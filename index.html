@@ -143,8 +143,18 @@
 
     /* Aviso breve "Guardado" junto al botón */
     .acciones-form { align-items: center; }
-    .guardado { color: var(--verde); font-weight: 700; }
-    .guardado:empty { display: none; }
+    /* Notificaciones (toasts): esquina superior derecha, desaparecen a los 3 s */
+    .toasts {
+      position: fixed; top: 16px; right: 16px; z-index: 30;
+      display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none;
+    }
+    .toast {
+      padding: 10px 14px; border-radius: 8px; color: #fff; font-weight: 600;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); overflow-wrap: anywhere;
+    }
+    .toast-exito { background: var(--verde); }
+    .toast-info { background: #4b5563; }
+    .toast-error { background: var(--rojo); }
 
     /* Confirmación en la página */
     .pie-panel { margin-top: 12px; display: flex; justify-content: flex-end; }
@@ -170,6 +180,9 @@
   </style>
 </head>
 <body>
+  <!-- Notificaciones (toasts) -->
+  <div id="toasts" class="toasts"></div>
+
   <header class="encabezado">
     <div class="encabezado-contenido">
       <h1>Food Saver</h1>
@@ -265,7 +278,6 @@
           </div>
           <div class="acciones-form">
             <button type="submit" id="boton-enviar" class="boton">Agregar</button>
-            <span id="estado-guardado" class="guardado" role="status" aria-live="polite"></span>
           </div>
         </form>
       </section>
@@ -525,13 +537,23 @@
       }
     }
 
-    // Aviso breve junto al botón ("Guardado" / "Eliminado"); se borra solo a los 4 segundos.
-    const estadoGuardado = document.getElementById('estado-guardado');
-    let temporizadorGuardado = null;
-    function mostrarGuardado(texto) {
-      estadoGuardado.textContent = texto;
-      clearTimeout(temporizadorGuardado);
-      temporizadorGuardado = setTimeout(() => { estadoGuardado.textContent = ''; }, 4000);
+    // Notificación en la esquina superior derecha que desaparece sola a los 3 s.
+    // tipo: 'exito' (verde), 'info' (gris) o 'error' (rojo).
+    const zonaToasts = document.getElementById('toasts');
+    const DURACION_TOAST = 3000;
+    function notificar(texto, tipo) {
+      const toast = crearTexto('div', texto, 'toast toast-' + tipo);
+      toast.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+      zonaToasts.appendChild(toast);
+      while (zonaToasts.children.length > 3) zonaToasts.firstChild.remove(); // máximo 3 a la vez
+      setTimeout(() => toast.remove(), DURACION_TOAST);
+    }
+
+    // Texto corto del toast rojo según los errores de validación.
+    const ERROR_CORTO = { nombre: 'Falta el nombre', cantidad: 'Cantidad inválida', unidad: 'Falta la unidad', fecha: 'Fecha inválida' };
+    function notificarErrores(errores) {
+      const claves = Object.keys(errores);
+      notificar(claves.length === 1 ? ERROR_CORTO[claves[0]] : 'Revisa los ' + claves.length + ' campos marcados', 'error');
     }
 
     /* ----- Formulario de Agregar (fijo, solo agrega) ----- */
@@ -545,8 +567,8 @@
       const resultado = validarIngrediente(alta.leer(), despensa, false);
       if (!resultado.ok) {
         // Con errores no se guarda ni se limpia el formulario.
-        estadoGuardado.textContent = ''; // no mezclar "Guardado" con errores
         alta.mostrarErrores(resultado.errores);
+        notificarErrores(resultado.errores);
         return;
       }
       agregarIngrediente(despensa, resultado.datos);
@@ -554,7 +576,7 @@
       form.reset();
       alta.limpiarErrores();
       render();
-      if (guardo) mostrarGuardado('Guardado');
+      if (guardo) notificar('Ingrediente agregado', 'exito');
       campoNombre.focus();
     });
 
@@ -636,13 +658,14 @@
       const resultado = validarIngrediente(edicion.leer(), despensa, true);
       if (!resultado.ok) {
         edicion.mostrarErrores(resultado.errores); // errores dentro del modal, bajo cada campo
+        notificarErrores(resultado.errores);
         return;
       }
       const ing = despensa.find(i => i.id === editandoId);
       if (ing) Object.assign(ing, resultado.datos);
       const guardo = guardar();
       cerrarEdicion();
-      if (guardo) mostrarGuardado('Guardado');
+      if (guardo) notificar('Cambios guardados', 'exito');
     });
 
     document.getElementById('editar-cancelar').addEventListener('click', cerrarEdicion);
@@ -697,7 +720,7 @@
             despensa = despensa.filter(i => i.id !== ing.id);
             const guardo = guardar();
             render();
-            if (guardo) mostrarGuardado('Eliminado');
+            if (guardo) notificar('Ingrediente eliminado', 'info');
             campoNombre.focus(); // el botón Eliminar ya no existe: el foco no se pierde
           });
       } else if (boton.dataset.accion === 'editar') {
@@ -720,7 +743,7 @@
           form.reset();
           alta.limpiarErrores();
           render();
-          if (guardo) mostrarGuardado('Restaurado');
+          if (guardo) notificar('Datos de ejemplo restaurados', 'exito');
           campoNombre.focus();
         });
     });
