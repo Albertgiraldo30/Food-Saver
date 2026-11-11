@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Node (por si acaso)
+node_modules/
+
+# Secretos y configuración local
+.env
+.claude/settings.local.json
+
+# Sistema y editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+
+# Temporales
+*.log
+*.tmp
