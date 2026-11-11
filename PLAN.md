@@ -342,3 +342,4 @@ Respuestas a las preguntas que dejó el arquitecto:
 15. **Persistencia de recetas:** en la capa 3 se guardan en localStorage la despensa **y las recetas** (pedido de la usuaria). Si las recetas guardadas están dañadas, se usan las predefinidas.
 16. **Restaurar datos de ejemplo (cambia la decisión 8):** la usuaria pidió el botón "Restaurar datos de ejemplo" con confirmación en la página (sin alert ni confirm del navegador). Requisito R9 de CLAUDE.md.
 17. **Próximo a vencer = 0 a 3 días (cambia R3):** la usuaria pidió colores rojo (vencido), naranja (vence en 3 días o menos) y verde (ok), y decidió que el cambio aplique a todo: lista, resumen y recetas (Aprovecha y orden).
+18. **Resumen arriba (pedido de la usuaria):** tres tarjetas: vencen pronto (0 a 3 días), vencidos y recetas posibles. "Recetas posibles" = todas las sugeridas (decisión de la usuaria), no solo las sin faltantes.

@@ -126,6 +126,21 @@
     .falta.nada .rotulo { color: var(--verde); }
     .preparacion { color: var(--suave); }
 
+    /* Resumen de arriba (ocupa todo el ancho del tablero) */
+    .resumen { grid-column: 1 / -1; display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .tarjeta-resumen {
+      display: flex; flex-direction: column; gap: 2px; padding: 12px 14px;
+      border-radius: var(--radio); border: 1px solid var(--borde); border-left: 6px solid var(--borde); background: #fff;
+    }
+    .tarjeta-resumen .cifra { font-size: 1.9rem; font-weight: 800; line-height: 1.1; }
+    .tarjeta-resumen.pronto { border-left-color: var(--naranja); background: var(--naranja-claro); }
+    .tarjeta-resumen.pronto .cifra { color: var(--naranja); }
+    .tarjeta-resumen.vencidos { border-left-color: var(--rojo); background: var(--rojo-claro); }
+    .tarjeta-resumen.vencidos .cifra { color: var(--rojo); }
+    .tarjeta-resumen.recetas { border-left-color: var(--verde); background: var(--verde-claro); }
+    .tarjeta-resumen.recetas .cifra { color: var(--verde); }
+    @media (max-width: 520px) { .tarjeta-resumen { padding: 10px; font-size: 0.85rem; } .tarjeta-resumen .cifra { font-size: 1.5rem; } }
+
     /* Confirmación en la página */
     .pie-panel { margin-top: 12px; display: flex; justify-content: flex-end; }
     .confirmacion {
@@ -164,6 +179,12 @@
   </div>
 
   <main class="tablero">
+    <section class="resumen" aria-label="Resumen">
+      <div class="tarjeta-resumen pronto"><span class="cifra" id="resumen-pronto">0</span><span>Vencen pronto (3 días o menos)</span></div>
+      <div class="tarjeta-resumen vencidos"><span class="cifra" id="resumen-vencidos">0</span><span>Vencidos</span></div>
+      <div class="tarjeta-resumen recetas"><span class="cifra" id="resumen-recetas">0</span><span>Recetas posibles</span></div>
+    </section>
+
     <div class="columna">
       <section class="panel" id="seccion-formulario" aria-labelledby="titulo-formulario">
         <h2 id="titulo-formulario">Agregar ingrediente</h2>
@@ -381,6 +402,10 @@
       pintarLista(listaDespensa, document.getElementById('contador-despensa'), vigentes, 'No hay ingredientes.');
       pintarLista(listaVencidos, document.getElementById('contador-vencidos'), vencidos, 'No hay ingredientes vencidos.');
       pintarRecetas();
+      const r = resumen(despensa, recetas);
+      document.getElementById('resumen-pronto').textContent = r.pronto;
+      document.getElementById('resumen-vencidos').textContent = r.vencidos;
+      document.getElementById('resumen-recetas').textContent = r.recetas;
     }
 
     /* ===================== Eventos ===================== */

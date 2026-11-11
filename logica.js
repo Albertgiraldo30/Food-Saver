@@ -402,6 +402,17 @@ function sugerirRecetas(lista, recetas = RECETAS) {
     });
 }
 
+// Resumen para la parte de arriba: cuántos vencen pronto (0 a 3 días), cuántos vencidos y
+// cuántas recetas posibles (= las sugeridas: usan al menos 1 ingrediente disponible).
+function resumen(lista, recetas = RECETAS) {
+  const validas = lista.filter(filaValida);
+  return {
+    pronto: validas.filter(ing => estadoDe(ing) === 'proximo').length,
+    vencidos: validas.filter(ing => estadoDe(ing) === 'vencido').length,
+    recetas: sugerirRecetas(lista, recetas).length
+  };
+}
+
 /* ===================== Persistencia (parte pura) ===================== */
 
 // Texto que se guarda en localStorage.
@@ -456,7 +467,7 @@ if (typeof module !== 'undefined' && module.exports) {
     redondear, aBase, convertir, validarCantidad, nombreUnidad, formatoCantidad, formatoFecha,
     ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
     nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
-    evaluarReceta, faltantesDe, sugerirRecetas,
+    evaluarReceta, faltantesDe, sugerirRecetas, resumen,
     filaGuardadaValida, recetaValida, serializar, deserializar
   };
 }

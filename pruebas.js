@@ -174,6 +174,16 @@ check('restaurar => fechas relativas a hoy (Tomate mañana, Queso ayer)',
 check('restaurar => todas las filas son válidas al guardar y leer',
   L.deserializar(L.serializar(restaurada, L.RECETAS)).descartados === 0);
 
+seccion('Resumen de arriba');
+const rs = L.resumen(semilla());
+check('ejemplo => 4 vencen pronto, 1 vencido, 7 recetas', rs.pronto === 4 && rs.vencidos === 1 && rs.recetas === 7);
+const r0 = L.resumen([]);
+check('despensa vacía => 0, 0, 0', r0.pronto === 0 && r0.vencidos === 0 && r0.recetas === 0);
+const rDemo = semilla(); L.agregarIngrediente(rDemo, { nombre: 'aguacate', cantidad: 1, unidad: 'unidades', vence: hoyISO() });
+L.agregarIngrediente(rDemo, { nombre: 'limón', cantidad: 2, unidad: 'unidades', vence: sumarDias(hoyISO(), -1) });
+const rd = L.resumen(rDemo);
+check('demo (aguacate hoy, limón ayer) => 5 pronto, 2 vencidos, 7 recetas', rd.pronto === 5 && rd.vencidos === 2 && rd.recetas === 7);
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);
