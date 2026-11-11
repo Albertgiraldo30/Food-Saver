@@ -21,3 +21,8 @@ desktop.ini
 # Temporales
 *.log
 *.tmp
+
+# Material de preparación (no es parte del proyecto)
+GUIA.md
+agentes/
+plantillas/
