@@ -158,6 +158,12 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     }
     .caja-confirmacion p { margin: 0 0 16px; font-weight: 600; }
+    .confirmacion.encima { z-index: 20; }
+    .caja-modal { max-width: 540px; max-height: calc(100vh - 32px); overflow-y: auto; }
+    .cabecera-modal { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .cabecera-modal h2 { margin: 0; font-size: 1.25rem; }
+    .boton-cerrar { border: 1px solid #a9b3a5; background: #fff; width: 36px; height: 36px; font-size: 1.4rem; line-height: 1; padding: 0; }
+    .boton-cerrar:hover { background: var(--fondo); }
 
     /* Oculto visualmente pero legible por lectores de pantalla */
     .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -173,7 +179,7 @@
   </header>
 
   <!-- Confirmación dentro de la página (sin ventanas emergentes del navegador). -->
-  <div id="confirmacion" class="confirmacion" role="alertdialog" aria-modal="true" aria-labelledby="texto-confirmacion" hidden>
+  <div id="confirmacion" class="confirmacion encima" role="alertdialog" aria-modal="true" aria-labelledby="texto-confirmacion" hidden>
     <div class="caja-confirmacion">
       <p id="texto-confirmacion"></p>
       <div class="acciones-form">
@@ -181,6 +187,44 @@
         <button type="button" id="boton-confirmar-no" class="boton-secundario">Cancelar</button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal de edición: overlay oscuro + tarjeta centrada. Mismas validaciones que Agregar. -->
+  <div id="modal-editar" class="confirmacion" role="dialog" aria-modal="true" aria-labelledby="titulo-editar" hidden>
+    <div class="caja-confirmacion caja-modal">
+      <div class="cabecera-modal">
+        <h2 id="titulo-editar">Editar ingrediente</h2>
+        <button type="button" id="editar-cerrar" class="boton-cerrar" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="form-editar" class="formulario" novalidate>
+            <div class="campo">
+              <label for="editar-nombre">Nombre</label>
+              <input id="editar-nombre" type="text" autocomplete="off" aria-describedby="error-editar-nombre">
+              <span class="error" id="error-editar-nombre" aria-live="polite"></span>
+            </div>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="editar-cantidad">Cantidad</label>
+              <input id="editar-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-editar-cantidad">
+              <span class="error" id="error-editar-cantidad" aria-live="polite"></span>
+            </div>
+            <div class="campo">
+              <label for="editar-unidad">Unidad</label>
+              <select id="editar-unidad" aria-describedby="error-editar-unidad"><option value="">Selecciona</option></select>
+              <span class="error" id="error-editar-unidad" aria-live="polite"></span>
+            </div>
+          </div>
+            <div class="campo">
+              <label for="editar-fecha">Fecha de vencimiento</label>
+              <input id="editar-fecha" type="date" aria-describedby="error-editar-fecha">
+              <span class="error" id="error-editar-fecha" aria-live="polite"></span>
+            </div>
+          <div class="acciones-form">
+            <button type="submit" id="editar-guardar" class="boton">Guardar</button>
+            <button type="button" id="editar-cancelar" class="boton-secundario">Cancelar</button>
+          </div>
+        </form>
+      </div>
   </div>
 
   <main class="tablero">
@@ -197,31 +241,30 @@
           <!-- El mensaje de error va FUERA del label para que el lector de pantalla no lo lea dos veces. -->
           <div class="campo">
             <label for="campo-nombre">Nombre</label>
-            <input id="campo-nombre" type="text" autocomplete="off" aria-describedby="error-nombre">
-            <span class="error" id="error-nombre" aria-live="polite"></span>
+            <input id="campo-nombre" type="text" autocomplete="off" aria-describedby="error-campo-nombre">
+            <span class="error" id="error-campo-nombre" aria-live="polite"></span>
           </div>
           <div class="fila-campos">
             <div class="campo">
               <label for="campo-cantidad">Cantidad</label>
-              <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-cantidad">
-              <span class="error" id="error-cantidad" aria-live="polite"></span>
+              <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-campo-cantidad">
+              <span class="error" id="error-campo-cantidad" aria-live="polite"></span>
             </div>
             <div class="campo">
               <label for="campo-unidad">Unidad</label>
-              <select id="campo-unidad" aria-describedby="error-unidad">
+              <select id="campo-unidad" aria-describedby="error-campo-unidad">
                 <option value="">Selecciona</option>
               </select>
-              <span class="error" id="error-unidad" aria-live="polite"></span>
+              <span class="error" id="error-campo-unidad" aria-live="polite"></span>
             </div>
           </div>
           <div class="campo">
             <label for="campo-fecha">Fecha de vencimiento</label>
-            <input id="campo-fecha" type="date" aria-describedby="error-fecha">
-            <span class="error" id="error-fecha" aria-live="polite"></span>
+            <input id="campo-fecha" type="date" aria-describedby="error-campo-fecha">
+            <span class="error" id="error-campo-fecha" aria-live="polite"></span>
           </div>
           <div class="acciones-form">
             <button type="submit" id="boton-enviar" class="boton">Agregar</button>
-            <button type="button" id="boton-cancelar" class="boton-secundario" hidden>Cancelar</button>
             <span id="estado-guardado" class="guardado" role="status" aria-live="polite"></span>
           </div>
         </form>
@@ -416,16 +459,71 @@
       document.getElementById('resumen-recetas').textContent = r.recetas;
     }
 
-    /* ===================== Eventos ===================== */
+    /* ===================== Formularios (agregar y editar) ===================== */
 
-    const form = document.getElementById('form-ingrediente');
-    const campoNombre = document.getElementById('campo-nombre');
-    const campoCantidad = document.getElementById('campo-cantidad');
-    const campoUnidad = document.getElementById('campo-unidad');
-    const campoFecha = document.getElementById('campo-fecha');
-    const botonEnviar = document.getElementById('boton-enviar');
-    const botonCancelar = document.getElementById('boton-cancelar');
-    const tituloFormulario = document.getElementById('titulo-formulario');
+    // Controla un formulario con los campos nombre, cantidad, unidad y fecha cuyos ids empiezan
+    // con "prefijo" (campo-… o editar-…). Lo usan el formulario de Agregar y el modal de Editar,
+    // así ambos tienen las mismas validaciones y los mismos mensajes bajo cada campo.
+    function crearControlFormulario(prefijo) {
+      const campos = ['nombre', 'cantidad', 'unidad', 'fecha'].map(clave => ({
+        clave,
+        campo: document.getElementById(prefijo + '-' + clave),
+        error: document.getElementById('error-' + prefijo + '-' + clave)
+      }));
+      const porClave = Object.fromEntries(campos.map(c => [c.clave, c.campo]));
+
+      function limpiarError(c) {
+        c.error.textContent = '';
+        c.campo.classList.remove('invalido');
+        c.campo.removeAttribute('aria-invalid');
+      }
+      // Al corregir un campo se borra su error.
+      for (const c of campos) {
+        c.campo.addEventListener('input', () => limpiarError(c));
+        c.campo.addEventListener('change', () => limpiarError(c));
+      }
+
+      return {
+        campos: porClave,
+        leer: () => ({
+          nombre: porClave.nombre.value,
+          cantidad: porClave.cantidad.value,
+          unidad: porClave.unidad.value,
+          vence: porClave.fecha.value
+        }),
+        llenar: ing => {
+          porClave.nombre.value = ing.nombre;
+          porClave.cantidad.value = ing.cantidad;
+          porClave.unidad.value = ing.unidad;
+          porClave.fecha.value = ing.vence;
+        },
+        limpiarErrores: () => campos.forEach(limpiarError),
+        // Muestra cada error bajo su campo y pone el foco en el primero.
+        mostrarErrores: errores => {
+          let primero = null;
+          for (const c of campos) {
+            limpiarError(c);
+            if (errores[c.clave]) {
+              c.error.textContent = errores[c.clave];
+              c.campo.classList.add('invalido');
+              c.campo.setAttribute('aria-invalid', 'true');
+              if (!primero) primero = c.campo;
+            }
+          }
+          if (primero) primero.focus();
+        }
+      };
+    }
+
+    // Llena un selector con las unidades: valor interno + nombre completo visible.
+    function llenarSelectorUnidades(select) {
+      for (const unidad of Object.keys(UNIDADES)) {
+        const opcion = document.createElement('option');
+        opcion.value = unidad;
+        opcion.textContent = nombreUnidad(unidad); // nombre completo; el valor interno no cambia
+        select.appendChild(opcion);
+      }
+    }
 
     // Aviso breve junto al botón ("Guardado" / "Eliminado"); se borra solo a los 4 segundos.
     const estadoGuardado = document.getElementById('estado-guardado');
@@ -436,88 +534,155 @@
       temporizadorGuardado = setTimeout(() => { estadoGuardado.textContent = ''; }, 4000);
     }
 
-    let editandoId = null; // id del ingrediente que se está editando, o null si se está agregando
+    /* ----- Formulario de Agregar (fijo, solo agrega) ----- */
 
-    // Campo de cada error que devuelve validarIngrediente (en el orden del formulario).
-    const CAMPOS = [
-      { clave: 'nombre',   campo: campoNombre,   error: document.getElementById('error-nombre') },
-      { clave: 'cantidad', campo: campoCantidad, error: document.getElementById('error-cantidad') },
-      { clave: 'unidad',   campo: campoUnidad,   error: document.getElementById('error-unidad') },
-      { clave: 'fecha',    campo: campoFecha,    error: document.getElementById('error-fecha') }
-    ];
-
-    function limpiarError(c) {
-      c.error.textContent = '';
-      c.campo.classList.remove('invalido');
-      c.campo.removeAttribute('aria-invalid');
-    }
-
-    // Muestra cada error junto a su campo y pone el foco en el primero.
-    function mostrarErrores(errores) {
-      estadoGuardado.textContent = ''; // no mezclar "Guardado" con errores
-      let primero = null;
-      for (const c of CAMPOS) {
-        limpiarError(c);
-        if (errores[c.clave]) {
-          c.error.textContent = errores[c.clave];
-          c.campo.classList.add('invalido');
-          c.campo.setAttribute('aria-invalid', 'true');
-          if (!primero) primero = c.campo;
-        }
-      }
-      if (primero) primero.focus();
-    }
-
-    // Al corregir un campo se borra su error.
-    for (const c of CAMPOS) {
-      c.campo.addEventListener('input', () => limpiarError(c));
-      c.campo.addEventListener('change', () => limpiarError(c));
-    }
-
-    function salirDeEdicion() {
-      editandoId = null;
-      botonEnviar.textContent = 'Agregar';
-      tituloFormulario.textContent = 'Agregar ingrediente';
-      botonCancelar.hidden = true;
-      form.reset();
-      CAMPOS.forEach(limpiarError);
-    }
+    const form = document.getElementById('form-ingrediente');
+    const alta = crearControlFormulario('campo');
+    const campoNombre = alta.campos.nombre;
 
     form.addEventListener('submit', evento => {
       evento.preventDefault();
-      const resultado = validarIngrediente({
-        nombre: campoNombre.value,
-        cantidad: campoCantidad.value,
-        unidad: campoUnidad.value,
-        vence: campoFecha.value
-      }, despensa, Boolean(editandoId));
+      const resultado = validarIngrediente(alta.leer(), despensa, false);
       if (!resultado.ok) {
         // Con errores no se guarda ni se limpia el formulario.
-        mostrarErrores(resultado.errores);
+        estadoGuardado.textContent = ''; // no mezclar "Guardado" con errores
+        alta.mostrarErrores(resultado.errores);
         return;
       }
-      const datos = resultado.datos;
-      if (editandoId) {
-        // Al editar nunca se fusiona.
-        const ing = despensa.find(i => i.id === editandoId);
-        if (ing) Object.assign(ing, datos);
-      } else {
-        agregarIngrediente(despensa, datos);
-      }
+      agregarIngrediente(despensa, resultado.datos);
       const guardo = guardar();
-      salirDeEdicion();
+      form.reset();
+      alta.limpiarErrores();
       render();
       if (guardo) mostrarGuardado('Guardado');
       campoNombre.focus();
     });
 
-    botonCancelar.addEventListener('click', () => {
-      salirDeEdicion();
-      render();
-      campoNombre.focus();
+    /* ===================== Ventanas modales ===================== */
+
+    // Pila de modales abiertos: Esc y Tab actúan sobre el de arriba.
+    const modalesAbiertos = [];
+
+    function abrirModal(modal, enfocar) {
+      modal.focoAnterior = document.activeElement;
+      modal.hidden = false;
+      modalesAbiertos.push(modal);
+      enfocar.focus();
+    }
+
+    function cerrarModal(modal) {
+      if (modal.hidden) return;
+      modal.hidden = true;
+      const i = modalesAbiertos.indexOf(modal);
+      if (i >= 0) modalesAbiertos.splice(i, 1);
+      if (modal.focoAnterior && document.contains(modal.focoAnterior)) modal.focoAnterior.focus();
+    }
+
+    // Elementos que pueden recibir foco dentro de un modal (para que Tab no se salga).
+    function enfocables(modal) {
+      return [...modal.querySelectorAll('button, input, select, textarea')]
+        .filter(el => !el.disabled && !el.hidden && el.offsetParent !== null);
+    }
+
+    document.addEventListener('keydown', e => {
+      const modal = modalesAbiertos[modalesAbiertos.length - 1];
+      if (!modal) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        modal.cerrar();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const lista = enfocables(modal);
+        if (lista.length === 0) return;
+        const i = lista.indexOf(document.activeElement);
+        const siguiente = e.shiftKey ? (i <= 0 ? lista.length - 1 : i - 1) : (i === lista.length - 1 ? 0 : i + 1);
+        e.preventDefault();
+        lista[siguiente].focus();
+      }
     });
 
-    // Botones Editar / Eliminar de las listas (delegación de eventos).
+    /* ----- Modal de Editar ----- */
+
+    const modalEditar = document.getElementById('modal-editar');
+    const formEditar = document.getElementById('form-editar');
+    const edicion = crearControlFormulario('editar');
+    let editandoId = null; // id del ingrediente abierto en el modal de edición
+
+    function abrirEdicion(ing) {
+      editandoId = ing.id;
+      edicion.limpiarErrores();
+      edicion.llenar(ing);
+      render(); // marca la fila que se está editando (el botón Editar se vuelve a crear)
+      abrirModal(modalEditar, edicion.campos.nombre);
+      modalEditar.focoAnterior = null; // el foco de vuelta se maneja en cerrarEdicion
+    }
+
+    function cerrarEdicion() {
+      const id = editandoId;
+      editandoId = null;
+      edicion.limpiarErrores();
+      cerrarModal(modalEditar);
+      render();
+      // El foco vuelve al botón Editar de esa fila (o al formulario si ya no existe).
+      const boton = document.querySelector('button[data-accion="editar"][data-id="' + id + '"]');
+      (boton || campoNombre).focus();
+    }
+    modalEditar.cerrar = cerrarEdicion;
+
+    formEditar.addEventListener('submit', evento => {
+      evento.preventDefault();
+      // Mismas validaciones que al agregar; al editar nunca se fusiona.
+      const resultado = validarIngrediente(edicion.leer(), despensa, true);
+      if (!resultado.ok) {
+        edicion.mostrarErrores(resultado.errores); // errores dentro del modal, bajo cada campo
+        return;
+      }
+      const ing = despensa.find(i => i.id === editandoId);
+      if (ing) Object.assign(ing, resultado.datos);
+      const guardo = guardar();
+      cerrarEdicion();
+      if (guardo) mostrarGuardado('Guardado');
+    });
+
+    document.getElementById('editar-cancelar').addEventListener('click', cerrarEdicion);
+    document.getElementById('editar-cerrar').addEventListener('click', cerrarEdicion);
+    // Clic fuera de la tarjeta (en el fondo oscuro) cierra el modal.
+    modalEditar.addEventListener('click', e => { if (e.target === modalEditar) cerrarEdicion(); });
+
+    /* ----- Modal de confirmación ----- */
+
+    const confirmacion = document.getElementById('confirmacion');
+    const textoConfirmacion = document.getElementById('texto-confirmacion');
+    const botonConfirmarSi = document.getElementById('boton-confirmar-si');
+    const botonConfirmarNo = document.getElementById('boton-confirmar-no');
+    let alConfirmar = null; // acción pendiente
+
+    // Muestra la confirmación; si la persona dice que sí, ejecuta "accion".
+    function pedirConfirmacion(texto, textoBotonSi, accion) {
+      textoConfirmacion.textContent = texto;
+      botonConfirmarSi.textContent = textoBotonSi;
+      alConfirmar = accion;
+      abrirModal(confirmacion, botonConfirmarNo); // la opción segura queda enfocada
+    }
+
+    function cerrarConfirmacion() {
+      alConfirmar = null;
+      cerrarModal(confirmacion);
+    }
+    confirmacion.cerrar = cerrarConfirmacion;
+
+    botonConfirmarSi.addEventListener('click', () => {
+      const accion = alConfirmar;
+      cerrarConfirmacion();
+      if (accion) accion();
+    });
+    botonConfirmarNo.addEventListener('click', cerrarConfirmacion);
+    confirmacion.addEventListener('click', e => { if (e.target === confirmacion) cerrarConfirmacion(); });
+
+    /* ===================== Botones de las listas ===================== */
+
+    // Editar / Eliminar (delegación de eventos).
     function alHacerClicEnLista(evento) {
       const boton = evento.target.closest('button[data-accion]');
       if (!boton) return;
@@ -531,68 +696,16 @@
           () => {
             despensa = despensa.filter(i => i.id !== ing.id);
             const guardo = guardar();
-            if (editandoId === ing.id) salirDeEdicion();
             render();
             if (guardo) mostrarGuardado('Eliminado');
             campoNombre.focus(); // el botón Eliminar ya no existe: el foco no se pierde
           });
       } else if (boton.dataset.accion === 'editar') {
-        CAMPOS.forEach(limpiarError);
-        editandoId = ing.id;
-        campoNombre.value = ing.nombre;
-        campoCantidad.value = ing.cantidad;
-        campoUnidad.value = ing.unidad;
-        campoFecha.value = ing.vence;
-        botonEnviar.textContent = 'Guardar cambios';
-        tituloFormulario.textContent = 'Editar ingrediente';
-        botonCancelar.hidden = false;
-        render(); // marca la fila que se está editando
-        campoNombre.focus();
+        abrirEdicion(ing);
       }
     }
     listaDespensa.addEventListener('click', alHacerClicEnLista);
     listaVencidos.addEventListener('click', alHacerClicEnLista);
-
-    /* ===================== Confirmación en la página ===================== */
-
-    const confirmacion = document.getElementById('confirmacion');
-    const textoConfirmacion = document.getElementById('texto-confirmacion');
-    const botonConfirmarSi = document.getElementById('boton-confirmar-si');
-    const botonConfirmarNo = document.getElementById('boton-confirmar-no');
-    let alConfirmar = null;      // acción pendiente
-    let focoAnterior = null;     // elemento al que vuelve el foco al cerrar
-
-    // Muestra la caja de confirmación; si la persona dice que sí, ejecuta "accion".
-    function pedirConfirmacion(texto, textoBotonSi, accion) {
-      focoAnterior = document.activeElement;
-      textoConfirmacion.textContent = texto;
-      botonConfirmarSi.textContent = textoBotonSi;
-      alConfirmar = accion;
-      confirmacion.hidden = false;
-      botonConfirmarNo.focus(); // la opción segura queda enfocada
-    }
-
-    function cerrarConfirmacion() {
-      confirmacion.hidden = true;
-      alConfirmar = null;
-      if (focoAnterior && document.contains(focoAnterior)) focoAnterior.focus();
-    }
-
-    botonConfirmarSi.addEventListener('click', () => {
-      const accion = alConfirmar;
-      cerrarConfirmacion();
-      if (accion) accion();
-    });
-    botonConfirmarNo.addEventListener('click', cerrarConfirmacion);
-    document.addEventListener('keydown', e => {
-      if (confirmacion.hidden) return;
-      if (e.key === 'Escape') cerrarConfirmacion();
-      // Tab y Shift+Tab no salen de la caja: alternan entre sus dos botones.
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        (document.activeElement === botonConfirmarSi ? botonConfirmarNo : botonConfirmarSi).focus();
-      }
-    });
 
     // Restaurar la despensa de ejemplo (fechas relativas a hoy) y las recetas predefinidas.
     document.getElementById('boton-restaurar').addEventListener('click', () => {
@@ -604,7 +717,8 @@
           recetas = RECETAS;
           aviso.hidden = true;          // se oculta ANTES de guardar: si guardar falla, su aviso queda visible
           const guardo = guardar();
-          salirDeEdicion();
+          form.reset();
+          alta.limpiarErrores();
           render();
           if (guardo) mostrarGuardado('Restaurado');
           campoNombre.focus();
@@ -613,13 +727,8 @@
 
     /* ===================== Inicio ===================== */
 
-    for (const unidad of Object.keys(UNIDADES)) {
-      const opcion = document.createElement('option');
-      opcion.value = unidad;
-      opcion.textContent = nombreUnidad(unidad); // nombre completo; el valor interno no cambia
-      campoUnidad.appendChild(opcion);
-    }
-
+    llenarSelectorUnidades(alta.campos.unidad);
+    llenarSelectorUnidades(edicion.campos.unidad);
     cargar();
     render();
   </script>
