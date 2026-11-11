@@ -1,6 +1,6 @@
 # Cómo trabajamos con los agentes
 
-Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persistencia) de 5 terminadas.
+Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persistencia) y 4 (Validaciones) de 5 terminadas.
 
 ## 1. Tarea delegada
 - Instrucción: al subagente `arquitecto` se le pidió el PLAN.md (5 capas, 240 minutos). Como CLAUDE.md aún no estaba guardado en disco, el encargo incluyó ENUNCIADO.md y el borrador completo de CLAUDE.md. CLAUDE.md se había llenado antes, con preguntas de opción múltiple a la usuaria, sin inventar datos. Ella decidió, entre otras cosas: las unidades, libra = 500 g, taza = 240 ml, cucharada = 15 ml, próximo a vencer = 0 a 5 días, cantidad mayor que 0 y hasta 10000 con decimales, vencidos en sección aparte, comparar nombre y cantidad, despensa precargada y 8 recetas propuestas por el agente y aprobadas por ella.
@@ -20,9 +20,23 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persis
   - cargar(): sin clave carga la semilla y la guarda; con datos dañados muestra aviso en pantalla y usa la semilla; sin localStorage muestra aviso y sigue en memoria.
   - guardar() tras agregar, editar, eliminar y fusionar. Clave `foodsaver.v1`.
   - Commit 8b23b19.
-- Aún no hay validaciones (capa 4).
+- Sexta tarea (capa 4, validaciones): el agente principal construyó las validaciones según la sección "Validaciones obligatorias" de CLAUDE.md. Commit c88e73e.
+  - En `logica.js`: validarIngrediente(crudos, lista, editando) devuelve { ok, errores por campo, datos }. Nombre obligatorio (sin contar espacios; los sobrantes se quitan). Cantidad con validarCantidad: número mayor que 0 y hasta 10000, con punto o coma decimal. Unidad obligatoria y de la lista. Fecha con validarFecha: obligatoria, real (rechaza 2026-02-30) y como máximo hoy + 5 años; las fechas pasadas se permiten y van a Vencidos. Al agregar, si se fusionaría con una fila (mismo nombre, tipo de unidad y fecha), el total no puede pasar de 10000. Para esto se extrajo la función buscarFusion.
+  - En `index.html`: mensaje de error bajo cada campo, campo marcado en rojo, foco en el primer error y el error se borra al corregir. Con errores no se guarda ni se limpia el formulario. Cancelar y Editar limpian los errores. No hay `alert()`.
+  - Documentación de la capa 3: se guardó en el commit 1a518b4.
+- Séptima tarea (ejecución de punta a punta, a pedido de la usuaria): el agente corrió las pruebas, tomó capturas en Chrome (inicio, errores y demo) y abrió la app en el Chrome de la usuaria.
+- Aún no hay diseño (capa 5).
 
 ## 2. Resultado refinado o rechazado
+
+### Capa 4: hallazgo MEDIO del revisor, "0.001" (corregido)
+- Qué salió mal: la cantidad "0.001" pasaba la validación (era mayor que 0). Al redondear a dos decimales se guardaba como 0, un valor que la regla prohíbe.
+- Cómo se corrigió: validarCantidad ahora rechaza lo que quedaría en 0 y muestra "La cantidad mínima es 0.01." Se añadieron 4 pruebas: 0.001 y 0.004 dan error, 0.005 se guarda como 0.01 y 0.01 es válido. Resultado: 74/74. Commit f12ceba.
+- Otros hallazgos del revisor en la capa 4, sin cambio de código:
+  - [BAJO] ".5" y "2." se rechazan. Cumple el PLAN. Se preguntó a la usuaria si quiere aceptar ".5". PENDIENTE: sin respuesta.
+  - [BAJO] un lector de pantalla puede leer el error dos veces (el span está dentro del label). Se deja para la capa 5.
+  - [BAJO] al editar puede quedar una fila igual a otra. Es la decisión 3 (al editar no se fusiona) y se deja así.
+- Observaciones propias para la capa 5, vistas en las capturas: "1 unidades" (falta el singular) y una sola columna con botones sin estilo.
 
 ### Capa 3: hallazgos MEDIOS del revisor (corregidos)
 - [MEDIO] Una receta guardada con unidad desconocida lanzaba un TypeError y dejaba la lista de recetas vacía. Se corrigió con la función recetaValida: si alguna receta guardada falla, se usan las predefinidas.
@@ -50,7 +64,7 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persis
 - [MEDIO] agregarIngrediente con cantidad inválida (texto da NaN, o negativa) fusionaba y dañaba la fila existente. Se corrigió: solo fusiona si la fila nueva es válida. Se añadió una prueba de regresión y el tomate original queda intacto.
 
 ### Observación de la usuaria en la capa 3: el nombre no se exige
-- La usuaria notó que el formulario no exige el nombre. El agente explicó que todas las validaciones son de la capa 4 (la siguiente). Hoy una fila sin nombre se agrega y se descarta al recargar, con aviso. Queda pendiente para la capa 4.
+- La usuaria notó que el formulario no exige el nombre. El agente explicó que todas las validaciones son de la capa 4 (la siguiente). Hasta entonces, una fila sin nombre se agregaba y se descartaba al recargar, con aviso. Resuelto en la capa 4: el nombre vacío se rechaza con error junto al campo (escenarios 1 y 9 de la verificación).
 
 ### Capa 1
 - Qué produjo el agente: el subagente `arquitecto` propuso el PLAN.md con decisiones provisionales: (a) al agregar un ingrediente repetido con fecha distinta, fusionarlo y quedarse con la fecha más próxima; (b) un ingrediente que no alcanza la cantidad no cuenta para mostrar la receta ni para su urgencia; (c) el tope de 10000 solo aplica a lo que se escribe, no al total sumado.
@@ -61,6 +75,31 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persis
 - Revisión de la documentación: el borrador del `documentador` atribuía a la usuaria el hallazgo de los plurales y usaba la ruta local del equipo en el README. El agente principal lo corrigió antes de guardarlo.
 
 ## 3. Verificación
+
+### Capa 4
+- Pruebas automáticas: `node pruebas.js` pasó 70/70 tras construir la capa (17 pruebas nuevas de validación) y 74/74 tras la corrección del revisor (4 pruebas más).
+- 11 escenarios con clics simulados en el navegador, hechos por el agente. Se hicieron primero en Edge. Luego la usuaria pidió cambiar el navegador a Chrome y se repitieron todos en Chrome con el mismo resultado. También se repitió en Chrome la persistencia A a E de la capa 3. Escenarios:
+  1. Formulario vacío: 4 errores, foco en Nombre, no guarda.
+  2. Cantidad "-2": "La cantidad debe ser mayor que 0." El nombre escrito se conserva.
+  3. Al corregir el campo, su error desaparece.
+  4. Cantidad "1,5": se guarda como 1.5.
+  5. Fecha de hoy + 5 años + 1 día: error.
+  6. "arroz 9999.5 kg" con la misma fecha del arroz: "Ya tienes 1 kg con esa fecha; el total (10000.5 kg) pasaría de 10000."
+  7. Fecha pasada: el ingrediente va a Vencidos.
+  8. Nombre `<b>Pan</b>`: se muestra como texto, no como etiqueta.
+  9. Editar con el nombre vacío: error, no guarda.
+  10. Cancelar limpia los errores.
+  11. Demo (aguacate hoy y limón ayer): la primera receta es "Ensalada de aguacate".
+- Resultado de los escenarios: 0 errores de JavaScript y 0 `alert(` en el código.
+- Capturas en Chrome (inicio, errores y demo), a pedido de la usuaria; el agente también abrió la app en el Chrome de ella. Confirmaron: errores en rojo bajo cada campo; en la demo el aguacate sube como "Vence hoy", el limón va a Vencidos y la primera receta es "Ensalada de aguacate" con "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (vencido)". También mostraron "1 unidades" y una sola columna con botones sin estilo (para la capa 5).
+- Subagente `revisor` (capa 4): APTO PARA PRUEBAS, sin críticos ni altos y sin regresiones en las capas 1 a 3. Limitación: solo leyó el código, no ejecutó nada. Revisó sin hallar problema: "  2 ", "2.", "1,5,2", "1e5", "+5", "-0", años de menos de 4 dígitos, fecha parcial y editar con errores. Hallazgos:
+  1. [MEDIO] "0.001" se guardaba como 0. CORREGIDO (ver sección 2, commit f12ceba).
+  2. [BAJO] ".5" y "2." se rechazan. Cumple el PLAN. PENDIENTE: respuesta de la usuaria.
+  3. [BAJO] el lector de pantalla lee el error dos veces. Para la capa 5.
+  4. [BAJO] al editar puede quedar una fila igual a otra. Decisión 3, se deja.
+- No se volvió a llamar al revisor tras la corrección del 0.001: NO VERIFICADO por un segundo revisor. La corrección sí se cubrió con las 4 pruebas nuevas (74/74).
+- Subagente `probador`: NO se ejecutó en la capa 4. NO VERIFICADO por el probador.
+- Pruebas manuales de la usuaria en el navegador: sin registro. NO VERIFICADO. Los escenarios fueron clics simulados por el agente.
 
 ### Capa 3 y separación de la lógica
 - Prueba de mutación (separación): en una copia de `logica.js` con libra = 453 g y "próximo" = 4 días fallaron exactamente esas 2 pruebas. Conclusión: las pruebas sí detectan errores.
@@ -119,5 +158,5 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persis
 - Capa 2, Vencidos y recetas: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido). Pruebas Node 23/23 OK y Edge headless sobre la página real. Probador no ejecutado. Clics de Editar, Eliminar y Cancelar: NO VERIFICADO (prueba manual de la usuaria sin registro). Commits dfffb4b "Capa 2: vencidos, recetas sugeridas y actualizar ingredientes" y 6c26e16 "Capa 2: usar lo que hay cuando un ingrediente no alcanza", subidos a GitHub. Documentación guardada en el commit ef20ce9.
 - Separación de la lógica (logica.js y pruebas.js, pedida por la usuaria, decisión 14): hecha. Prueba de mutación: las pruebas detectan los errores introducidos. Commit 54dbb94.
 - Capa 3, Persistencia: terminada. Revisor APTO PARA PRUEBAS (2 hallazgos MEDIOS corregidos). Pruebas Node 53/53 y verificación de persistencia en Edge headless (A a E). Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits 8b23b19 y c0cee09.
-- Capa 4, Validaciones: PENDIENTE (incluye exigir el nombre).
-- Capa 5, Diseño: PENDIENTE.
+- Capa 4, Validaciones: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido; ".5" PENDIENTE de respuesta de la usuaria). Pruebas Node 74/74. 11 escenarios con clics simulados en Edge y repetidos en Chrome (con la persistencia A a E), 0 errores JS, 0 `alert(`. Capturas en Chrome. Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits c88e73e y f12ceba.
+- Capa 5, Diseño: PENDIENTE (incluye "1 unidades", columnas, botones y accesibilidad del error).

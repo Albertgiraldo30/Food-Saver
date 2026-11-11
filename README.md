@@ -8,10 +8,10 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 - Capa 1, Base: TERMINADA. Formulario, despensa ordenada por fecha, datos de ejemplo.
 - Capa 2, Vencidos y recetas: TERMINADA. Vencidos aparte, próximos destacados, recetas sugeridas, editar, eliminar y fusionar.
 - Capa 3, Persistencia con localStorage: TERMINADA. La despensa y las recetas se guardan y se recuperan al recargar.
-- Capa 4, Validaciones con errores junto al campo: pendiente.
+- Capa 4, Validaciones con errores junto al campo: TERMINADA. Ver sección "Validaciones".
 - Capa 5, Diseño: pendiente. Ver detalle en PLAN.md.
 
-## Qué se puede hacer hoy (capas 1 a 3)
+## Qué se puede hacer hoy (capas 1 a 4)
 - Ver la despensa precargada, ordenada por fecha de vencimiento (empate: por nombre).
 - Agregar un ingrediente con nombre, cantidad, unidad y fecha.
 - Unidades disponibles: unidades, g, kg, ml, l, tazas, cucharadas, libras.
@@ -22,6 +22,27 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 - Al agregar, se fusiona con una fila existente solo si coinciden nombre, tipo de unidad y fecha (las cantidades se suman).
 - Ver recetas sugeridas. Cada tarjeta muestra "Aprovecha:", "Usa:", "Te falta:" (con el motivo) y "Preparación:".
 - Recargar la página sin perder nada: se guardan la despensa y las recetas.
+- Ver errores de validación en rojo, bajo cada campo, al agregar o editar.
+
+## Validaciones (capa 4)
+Se aplican al agregar y al editar. Los errores salen bajo el campo, nunca con `alert()`.
+- Nombre: obligatorio. Los espacios no cuentan y los sobrantes se quitan.
+- Cantidad: número mayor que 0, mínimo 0.01 y máximo 10000. Acepta punto o coma decimal ("1,5" = 1.5).
+- Unidad: obligatoria y de la lista permitida.
+- Fecha: obligatoria, real (se rechaza 2026-02-30) y como máximo hoy + 5 años. Las fechas pasadas se permiten y el ingrediente va a Vencidos.
+- Al agregar, si se fusionaría con una fila (mismo nombre, tipo de unidad y fecha), el total no puede pasar de 10000.
+
+Cómo se comporta el formulario:
+- Cada campo con error se marca en rojo y muestra su mensaje.
+- El foco va al primer campo con error.
+- El error desaparece al corregir ese campo.
+- Con errores no se guarda nada y el formulario no se limpia.
+- Cancelar y Editar limpian los errores.
+
+Ejemplos de mensajes:
+- Cantidad "-2": "La cantidad debe ser mayor que 0."
+- Cantidad "0.001": "La cantidad mínima es 0.01."
+- Agregar arroz 9999.5 kg con la misma fecha del arroz que ya existe: "Ya tienes 1 kg con esa fecha; el total (10000.5 kg) pasaría de 10000."
 
 ## Cómo funcionan las recetas
 - Para cada ingrediente se suman todas las filas no vencidas, convirtiendo unidades (por ejemplo tazas a ml).
@@ -43,12 +64,13 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 ## Flujo de la demo
 1. Agrega aguacate con vencimiento hoy.
 2. Agrega limón con vencimiento ayer (aparece en Vencidos).
-3. Mira las recetas: la primera es "Ensalada de aguacate", con "Te falta: limón (vencido)".
-4. Recarga con F5: todo sigue ahí.
+3. Mira las recetas: la primera es "Ensalada de aguacate", con "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (vencido)".
+4. Intenta agregar una cantidad -2: se rechaza con un error junto al campo.
+5. Recarga con F5: todo sigue ahí.
 
 ## Todavía NO existe
-- Validaciones (capa 4): el formulario y la edición aún aceptan valores incorrectos. Por ejemplo, el nombre vacío no se rechaza: la fila se agrega y, al recargar, se descarta con aviso.
-- Botón "Cocinar esta receta" (opcional, P2).
+- Diseño de la capa 5 (estilos, singular/plural, distribución de la pantalla).
+- Botón "Cocinar esta receta" (R8, opcional, P2).
 
 ## Requisitos
 - Un navegador moderno (Chrome, Edge o Firefox).
@@ -57,8 +79,8 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 - Opcional: Visual Studio Code con la extensión Live Server.
 
 ## Estructura de archivos
-- `index.html`: la pantalla (HTML, CSS y JavaScript del DOM) y la persistencia con localStorage.
-- `logica.js`: constantes y funciones puras (sin DOM ni localStorage). Se carga desde `index.html` con un `<script src>` normal, por eso funciona con doble clic. También se puede usar desde Node.
+- `index.html`: la pantalla (HTML, CSS y JavaScript del DOM), los errores de validación y la persistencia con localStorage.
+- `logica.js`: constantes y funciones puras (sin DOM ni localStorage), incluidas las validaciones. Se carga desde `index.html` con un `<script src>` normal, por eso funciona con doble clic. También se puede usar desde Node.
 - `pruebas.js`: pruebas de `logica.js`.
 - `PLAN.md`, `PROCESO.md`, `CLAUDE.md`, `ENUNCIADO.md`: plan, evidencias del proceso y reglas del proyecto.
 
@@ -79,11 +101,11 @@ Aviso: al abrir con doble clic (`file://`) y con Live Server (`http://127.0.0.1`
 ## Cómo correr las pruebas
 1. Abre una terminal (PowerShell o CMD) en la carpeta del proyecto.
 2. Ejecuta: `node pruebas.js`
-3. Debe terminar sin fallas. El último resultado registrado fue 53/53 pruebas OK.
+3. Debe terminar sin fallas. El último resultado registrado fue 74/74 pruebas OK.
 
 ## Cómo usarlo ahora
 1. Revisa la despensa de ejemplo, los vencidos y las recetas sugeridas.
-2. Escribe nombre, cantidad, unidad y fecha de vencimiento y pulsa Agregar. Las recetas se recalculan.
+2. Escribe nombre, cantidad, unidad y fecha de vencimiento y pulsa Agregar. Si algo está mal, verás el error bajo el campo. Si todo está bien, las recetas se recalculan.
 3. Usa Editar o Eliminar en cada fila. En edición, pulsa "Guardar cambios" o "Cancelar".
 4. Recarga con F5: tus cambios siguen guardados.
 
@@ -102,11 +124,15 @@ queso 200 g (ya vencido, ayer), tomate 4 unidades (+1 día), leche 1 l (+2), pec
 - 1 kg = 1000 g; 1 libra = 500 g; 1 l = 1000 ml; 1 taza = 240 ml; 1 cucharada = 15 ml.
 
 ## Limitaciones conocidas
-- Validaciones pendientes (capa 4): se aceptan cantidades incorrectas y también el nombre vacío. Una fila con datos inválidos se descarta con aviso al recargar. Editar puede guardar datos inválidos.
+- Las cantidades ".5" y "2." se rechazan (hay que escribir "0.5" y "2"). Cumple el PLAN. Se preguntó a la usuaria si quiere aceptar ".5": sin respuesta, PENDIENTE.
+- Al editar, una fila puede quedar igual a otra (mismo nombre, unidad y fecha), porque editar no fusiona. Es una decisión del proyecto.
+- Falta el singular en el texto: se ve "1 unidades". Queda para la capa 5.
+- Accesibilidad: un lector de pantalla puede leer el mensaje de error dos veces (el mensaje está dentro de la etiqueta del campo). Queda para la capa 5.
+- Diseño básico: una sola columna y botones sin estilo. Queda para la capa 5.
 - Las recetas guardadas ocultan cambios hechos en el código. Para verlos hay que borrar `foodsaver.v1`.
 - Si dos ingredientes guardados tuvieran el mismo id (solo por edición manual de localStorage) o se usan dos pestañas a la vez, no hay control: la última que guarda gana. No se cambió.
 - Solo se quita el plural al final del nombre completo. "Pechugas de pollo" no se reconoce como "pechuga de pollo".
 - Si la pestaña queda abierta pasada la medianoche, los estados (vence hoy, vencido) no se actualizan hasta recargar.
 - Como una receta puede usar solo parte de un ingrediente, si más adelante se hace el botón "Cocinar" (R8) habrá que decidir su regla. NO decidido.
-- Las pruebas manuales de la usuaria en el navegador (Editar, Eliminar, Cancelar y la persistencia a mano) no tienen registro: NO VERIFICADO (ver PROCESO.md).
-- El probador no se ejecutó en las capas 1, 2 ni 3 (ver PROCESO.md).
+- Las pruebas manuales de la usuaria en el navegador (Editar, Eliminar, Cancelar y la persistencia a mano) no tienen registro: NO VERIFICADO (ver PROCESO.md). La capa 4 se probó con clics simulados por el agente, no por la usuaria.
+- El probador no se ejecutó en las capas 1, 2, 3 ni 4 (ver PROCESO.md).
