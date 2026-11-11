@@ -606,7 +606,7 @@
     for (const unidad of Object.keys(UNIDADES)) {
       const opcion = document.createElement('option');
       opcion.value = unidad;
-      opcion.textContent = unidad;
+      opcion.textContent = nombreUnidad(unidad); // nombre completo; el valor interno no cambia
       campoUnidad.appendChild(opcion);
     }
 

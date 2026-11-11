@@ -161,7 +161,13 @@ check('4 unidades se queda en plural', L.formatoCantidad(4, 'unidades') === '4 u
 check('1 tazas => "1 taza", 1 cucharadas => "1 cucharada", 1 libras => "1 libra"',
   L.formatoCantidad(1, 'tazas') === '1 taza' && L.formatoCantidad(1, 'cucharadas') === '1 cucharada' &&
   L.formatoCantidad(1, 'libras') === '1 libra');
-check('1.5 kg y 1 l no cambian', L.formatoCantidad(1.5, 'kg') === '1.5 kg' && L.formatoCantidad(1, 'l') === '1 l');
+check('nombres completos: 1.5 kg => "1.5 kilogramos", 1 l => "1 litro"', L.formatoCantidad(1.5, 'kg') === '1.5 kilogramos' && L.formatoCantidad(1, 'l') === '1 litro');
+check('NOMBRES_UNIDAD: "1 libra", "250 gramos", "1 mililitro", "2 cucharadas"',
+  L.formatoCantidad(1, 'libras') === '1 libra' && L.formatoCantidad(250, 'g') === '250 gramos' &&
+  L.formatoCantidad(1, 'ml') === '1 mililitro' && L.formatoCantidad(2, 'cucharadas') === '2 cucharadas');
+check('NOMBRES_UNIDAD cubre todas las unidades y no cambia los valores internos',
+  Object.keys(L.NOMBRES_UNIDAD).join() === Object.keys(L.UNIDADES).join() &&
+  Object.keys(L.UNIDADES).join() === 'unidades,g,kg,libras,ml,l,tazas,cucharadas');
 check('fecha 2026-11-12 => 12/11/2026', L.formatoFecha('2026-11-12') === '12/11/2026');
 
 seccion('Restaurar datos de ejemplo (crearSemilla)');

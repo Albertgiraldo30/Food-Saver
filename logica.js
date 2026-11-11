@@ -171,14 +171,27 @@ function textoVence(dias) {
 
 function redondear(n) { return Math.round(n * 100) / 100; }
 
-// Unidad en singular cuando la cantidad es exactamente 1 ("1 unidad", "1 taza"); g, kg, ml y l no cambian.
-const UNIDAD_SINGULAR = { unidades: 'unidad', tazas: 'taza', cucharadas: 'cucharada', libras: 'libra' };
+// Nombres completos que se MUESTRAN para cada unidad (los valores internos no cambian).
+const NOMBRES_UNIDAD = {
+  unidades:   { singular: 'unidad',     plural: 'unidades' },
+  g:          { singular: 'gramo',      plural: 'gramos' },
+  kg:         { singular: 'kilogramo',  plural: 'kilogramos' },
+  libras:     { singular: 'libra',      plural: 'libras' },
+  ml:         { singular: 'mililitro',  plural: 'mililitros' },
+  l:          { singular: 'litro',      plural: 'litros' },
+  tazas:      { singular: 'taza',       plural: 'tazas' },
+  cucharadas: { singular: 'cucharada',  plural: 'cucharadas' }
+};
 
+// Nombre visible de la unidad: singular si la cantidad es exactamente 1, plural en otro caso.
+// Sin cantidad (p. ej. en el selector) devuelve el plural. Si la unidad no existe, la deja igual.
 function nombreUnidad(unidad, cantidad) {
-  return cantidad === 1 && UNIDAD_SINGULAR[unidad] ? UNIDAD_SINGULAR[unidad] : unidad;
+  const n = NOMBRES_UNIDAD[unidad];
+  if (!n) return String(unidad);
+  return cantidad === 1 ? n.singular : n.plural;
 }
 
-// "1 unidad", "4 unidades", "1.5 kg", "1 taza".
+// "1 unidad", "4 unidades", "1.5 kilogramos", "1 libra", "250 gramos".
 function formatoCantidad(cantidad, unidad) {
   return cantidad + ' ' + nombreUnidad(unidad, cantidad);
 }
@@ -269,8 +282,8 @@ function validarIngrediente(crudos, lista, editando) {
     if (existente) {
       const total = redondear(existente.cantidad + convertir(datos.cantidad, datos.unidad, existente.unidad));
       if (total > CANTIDAD_MAXIMA) {
-        errores.cantidad = 'Ya tienes ' + existente.cantidad + ' ' + existente.unidad + ' con esa fecha; ' +
-          'el total (' + total + ' ' + existente.unidad + ') pasaría de ' + CANTIDAD_MAXIMA + '.';
+        errores.cantidad = 'Ya tienes ' + formatoCantidad(existente.cantidad, existente.unidad) + ' con esa fecha; ' +
+          'el total (' + formatoCantidad(total, existente.unidad) + ') pasaría de ' + CANTIDAD_MAXIMA + '.';
       }
     }
   }
@@ -464,7 +477,7 @@ if (typeof module !== 'undefined' && module.exports) {
     UNIDADES, CLAVE, CANTIDAD_MAXIMA, DIAS_PROXIMO, RECETAS, SEMILLA,
     limpiarTexto, normalizar, formasNombre, mismoNombre,
     hoyISO, sumarDias, diasPara, estadoDe, textoVence,
-    redondear, aBase, convertir, validarCantidad, nombreUnidad, formatoCantidad, formatoFecha,
+    redondear, aBase, convertir, validarCantidad, NOMBRES_UNIDAD, nombreUnidad, formatoCantidad, formatoFecha,
     ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
     nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas, resumen,
