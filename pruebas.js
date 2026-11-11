@@ -148,6 +148,15 @@ check('al editar no se revisa el tope de fusión',
 check('con otra fecha no hay fusión ni tope',
   vi({ nombre: 'arroz', cantidad: '9999.5', unidad: 'kg', vence: sumarDias(hoyISO(), 10) }, conArroz).ok);
 
+seccion('Capa 5: formato para la pantalla');
+check('1 unidades => "1 unidad"', L.formatoCantidad(1, 'unidades') === '1 unidad');
+check('4 unidades se queda en plural', L.formatoCantidad(4, 'unidades') === '4 unidades');
+check('1 tazas => "1 taza", 1 cucharadas => "1 cucharada", 1 libras => "1 libra"',
+  L.formatoCantidad(1, 'tazas') === '1 taza' && L.formatoCantidad(1, 'cucharadas') === '1 cucharada' &&
+  L.formatoCantidad(1, 'libras') === '1 libra');
+check('1.5 kg y 1 l no cambian', L.formatoCantidad(1.5, 'kg') === '1.5 kg' && L.formatoCantidad(1, 'l') === '1 l');
+check('fecha 2026-11-12 => 12/11/2026', L.formatoFecha('2026-11-12') === '12/11/2026');
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);

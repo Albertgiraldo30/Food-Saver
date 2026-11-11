@@ -171,6 +171,24 @@ function textoVence(dias) {
 
 function redondear(n) { return Math.round(n * 100) / 100; }
 
+// Unidad en singular cuando la cantidad es exactamente 1 ("1 unidad", "1 taza"); g, kg, ml y l no cambian.
+const UNIDAD_SINGULAR = { unidades: 'unidad', tazas: 'taza', cucharadas: 'cucharada', libras: 'libra' };
+
+function nombreUnidad(unidad, cantidad) {
+  return cantidad === 1 && UNIDAD_SINGULAR[unidad] ? UNIDAD_SINGULAR[unidad] : unidad;
+}
+
+// "1 unidad", "4 unidades", "1.5 kg", "1 taza".
+function formatoCantidad(cantidad, unidad) {
+  return cantidad + ' ' + nombreUnidad(unidad, cantidad);
+}
+
+// 'YYYY-MM-DD' -> 'DD/MM/YYYY' (formato de fecha usado en Colombia). Si no es válida, la deja igual.
+function formatoFecha(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso);
+}
+
 // Convierte una cantidad a la unidad base de su tipo: { tipo, valor }.
 function aBase(cantidad, unidad) {
   const u = UNIDADES[unidad];
@@ -435,7 +453,7 @@ if (typeof module !== 'undefined' && module.exports) {
     UNIDADES, CLAVE, CANTIDAD_MAXIMA, DIAS_PROXIMO, RECETAS, SEMILLA,
     limpiarTexto, normalizar, formasNombre, mismoNombre,
     hoyISO, sumarDias, diasPara, estadoDe, textoVence,
-    redondear, aBase, convertir, validarCantidad,
+    redondear, aBase, convertir, validarCantidad, nombreUnidad, formatoCantidad, formatoFecha,
     ANOS_MAXIMOS, fechaMaxima, fechaReal, validarFecha, validarIngrediente,
     nuevoId, crearSemilla, filaValida, ordenarPorVencimiento, separarVencidos, buscarFusion, agregarIngrediente,
     evaluarReceta, faltantesDe, sugerirRecetas,

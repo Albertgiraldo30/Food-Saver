@@ -5,75 +5,193 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Food Saver</title>
   <style>
-    /* Estilos mínimos: el diseño completo es la capa 5 */
-    body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 960px; padding: 16px; }
-    form { display: grid; gap: 8px; max-width: 360px; margin-bottom: 24px; }
-    label { display: grid; gap: 4px; }
-    ul { padding-left: 20px; }
-    li { margin: 4px 0; }
-    .vacio { color: #666; font-style: italic; }
-    li button { margin-left: 8px; }
-    .proximo { color: #b45309; font-weight: 600; }
-    .vencido { color: #b91c1c; }
-    .receta { border: 1px solid #ccc; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; }
-    .receta h3 { margin: 4px 0; }
-    .receta p { margin: 4px 0; }
-    .error { color: #b91c1c; font-size: 0.9em; min-height: 1em; }
-    .invalido { border: 2px solid #b91c1c; }
-    .aviso { background: #fef3c7; border: 1px solid #b45309; padding: 8px; border-radius: 6px; }
+    /* ===================== Diseño (capa 5) ===================== */
+    :root {
+      --fondo: #f4f6f1;
+      --panel: #ffffff;
+      --borde: #d6dccf;
+      --texto: #1f2a1f;
+      --suave: #5b665b;
+      --verde: #2f7d32;
+      --verde-oscuro: #22602a;
+      --verde-claro: #e6f2e4;
+      --naranja: #a85400;
+      --naranja-claro: #fdf0dc;
+      --rojo: #b3261e;
+      --rojo-claro: #fbe7e5;
+      --radio: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 17px;
+      line-height: 1.45;
+      color: var(--texto);
+      background: var(--fondo);
+    }
+
+    /* Encabezado */
+    .encabezado { background: var(--verde); color: #fff; padding: 18px 0; }
+    .encabezado-contenido { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+    .encabezado h1 { margin: 0; font-size: 1.8rem; }
+    .encabezado p { margin: 4px 0 0; opacity: 0.95; }
+    .aviso {
+      max-width: 1200px; margin: 12px auto 0; padding: 10px 14px;
+      background: var(--naranja-claro); color: var(--texto);
+      border: 1px solid var(--naranja); border-radius: var(--radio);
+    }
+
+    /* Tablero: una columna en celular, dos en escritorio */
+    .tablero {
+      max-width: 1200px; margin: 0 auto; padding: 16px;
+      display: grid; gap: 16px; grid-template-columns: 1fr;
+    }
+    @media (min-width: 900px) {
+      .tablero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+    }
+    .columna { display: grid; gap: 16px; min-width: 0; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--borde);
+      border-radius: var(--radio); padding: 16px; min-width: 0;
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+    .contador {
+      font-size: 0.85rem; font-weight: 600; background: var(--fondo);
+      border: 1px solid var(--borde); border-radius: 999px; padding: 0 10px;
+    }
+
+    /* Formulario */
+    .formulario { display: grid; gap: 12px; }
+    .fila-campos { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 520px) { .fila-campos { grid-template-columns: 1fr 1fr; } }
+    .campo { display: grid; gap: 4px; min-width: 0; }
+    .campo label { font-weight: 600; }
+    .campo input, .campo select {
+      width: 100%; font: inherit; padding: 8px 10px;
+      border: 1px solid #a9b3a5; border-radius: 8px; background: #fff; color: var(--texto);
+    }
+    .campo input:focus, .campo select:focus { outline: 3px solid #9cc79e; outline-offset: 1px; }
+    .invalido { border: 2px solid var(--rojo) !important; background: var(--rojo-claro) !important; }
+    .error { color: var(--rojo); font-size: 0.9rem; min-height: 1.2em; }
+    .acciones-form { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Botones */
+    button { font: inherit; cursor: pointer; border-radius: 8px; }
+    .boton { padding: 9px 18px; border: 1px solid var(--verde); background: var(--verde); color: #fff; font-weight: 600; }
+    .boton:hover { background: var(--verde-oscuro); }
+    .boton-secundario { padding: 9px 18px; border: 1px solid #a9b3a5; background: #fff; color: var(--texto); }
+    .boton-chico { padding: 4px 10px; font-size: 0.9rem; border: 1px solid #a9b3a5; background: #fff; color: var(--texto); }
+    .boton-chico:hover, .boton-secundario:hover { background: var(--fondo); }
+    .boton-peligro { color: var(--rojo); border-color: #e2a9a4; }
+    button:focus-visible { outline: 3px solid #9cc79e; outline-offset: 2px; }
+
+    /* Listas de ingredientes */
+    .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .ingrediente {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+      padding: 10px 12px; border: 1px solid var(--borde); border-left: 6px solid var(--borde);
+      border-radius: 8px; background: #fff;
+    }
+    .ingrediente.proximo { border-left-color: var(--naranja); background: var(--naranja-claro); }
+    .ingrediente.vencido { border-left-color: var(--rojo); background: var(--rojo-claro); }
+    .ingrediente.editando { outline: 3px solid #9cc79e; }
+    .info { flex: 1 1 220px; min-width: 0; }
+    .nombre { font-weight: 700; overflow-wrap: anywhere; }
+    .detalle { color: var(--suave); font-size: 0.95rem; }
+    .acciones { display: flex; gap: 6px; }
+    .etiqueta {
+      display: inline-block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em; padding: 1px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle;
+    }
+    .etiqueta.proximo { background: var(--naranja); color: #fff; }
+    .etiqueta.vencido { background: var(--rojo); color: #fff; }
+    .vacio { color: var(--suave); font-style: italic; }
+
+    /* Tarjetas de recetas */
+    .recetas { display: grid; gap: 12px; }
+    .receta { border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; background: #fff; }
+    .receta.urgente { border-left: 6px solid var(--naranja); }
+    .receta h3 { margin: 0 0 6px; font-size: 1.15rem; }
+    .receta p { margin: 6px 0 0; }
+    .aprovecha {
+      display: inline-block; background: var(--naranja-claro); color: var(--naranja);
+      font-weight: 700; padding: 2px 10px; border-radius: 999px;
+    }
+    .rotulo { font-weight: 700; }
+    .usa .rotulo { color: var(--verde); }
+    .falta .rotulo { color: var(--rojo); }
+    .falta.nada .rotulo { color: var(--verde); }
+    .preparacion { color: var(--suave); }
+
+    /* Oculto visualmente pero legible por lectores de pantalla */
+    .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Food Saver</h1>
-    <p>Usa primero lo que está por vencer.</p>
+  <header class="encabezado">
+    <div class="encabezado-contenido">
+      <h1>Food Saver</h1>
+      <p>Usa primero lo que está por vencer.</p>
+    </div>
     <p id="aviso" class="aviso" role="status" hidden></p>
   </header>
 
-  <main>
-    <section id="seccion-formulario">
-      <h2>Agregar ingrediente</h2>
-      <form id="form-ingrediente" novalidate>
-        <label>Nombre
-          <input id="campo-nombre" type="text" autocomplete="off" aria-describedby="error-nombre">
-          <span class="error" id="error-nombre" aria-live="polite"></span>
-        </label>
-        <label>Cantidad
-          <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-cantidad">
-          <span class="error" id="error-cantidad" aria-live="polite"></span>
-        </label>
-        <label>Unidad
-          <select id="campo-unidad" aria-describedby="error-unidad">
-            <option value="">Selecciona</option>
-          </select>
-          <span class="error" id="error-unidad" aria-live="polite"></span>
-        </label>
-        <label>Fecha de vencimiento
-          <input id="campo-fecha" type="date" aria-describedby="error-fecha">
-          <span class="error" id="error-fecha" aria-live="polite"></span>
-        </label>
-        <button type="submit" id="boton-enviar">Agregar</button>
-        <button type="button" id="boton-cancelar" hidden>Cancelar</button>
-      </form>
-    </section>
+  <main class="tablero">
+    <div class="columna">
+      <section class="panel" id="seccion-formulario" aria-labelledby="titulo-formulario">
+        <h2 id="titulo-formulario">Agregar ingrediente</h2>
+        <form id="form-ingrediente" class="formulario" novalidate>
+          <!-- El mensaje de error va FUERA del label para que el lector de pantalla no lo lea dos veces. -->
+          <div class="campo">
+            <label for="campo-nombre">Nombre</label>
+            <input id="campo-nombre" type="text" autocomplete="off" aria-describedby="error-nombre">
+            <span class="error" id="error-nombre" aria-live="polite"></span>
+          </div>
+          <div class="fila-campos">
+            <div class="campo">
+              <label for="campo-cantidad">Cantidad</label>
+              <input id="campo-cantidad" type="text" inputmode="decimal" autocomplete="off" aria-describedby="error-cantidad">
+              <span class="error" id="error-cantidad" aria-live="polite"></span>
+            </div>
+            <div class="campo">
+              <label for="campo-unidad">Unidad</label>
+              <select id="campo-unidad" aria-describedby="error-unidad">
+                <option value="">Selecciona</option>
+              </select>
+              <span class="error" id="error-unidad" aria-live="polite"></span>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="campo-fecha">Fecha de vencimiento</label>
+            <input id="campo-fecha" type="date" aria-describedby="error-fecha">
+            <span class="error" id="error-fecha" aria-live="polite"></span>
+          </div>
+          <div class="acciones-form">
+            <button type="submit" id="boton-enviar" class="boton">Agregar</button>
+            <button type="button" id="boton-cancelar" class="boton-secundario" hidden>Cancelar</button>
+          </div>
+        </form>
+      </section>
 
-    <section id="seccion-despensa">
-      <h2>Despensa</h2>
-      <ul id="lista-despensa"></ul>
-    </section>
+      <section class="panel" id="seccion-despensa" aria-labelledby="titulo-despensa">
+        <h2 id="titulo-despensa">Despensa <span class="contador" id="contador-despensa"></span></h2>
+        <ul class="lista" id="lista-despensa"></ul>
+      </section>
 
-    <section id="seccion-vencidos">
-      <h2>Vencidos</h2>
-      <ul id="lista-vencidos"></ul>
-    </section>
+      <section class="panel" id="seccion-vencidos" aria-labelledby="titulo-vencidos">
+        <h2 id="titulo-vencidos">Vencidos <span class="contador" id="contador-vencidos"></span></h2>
+        <ul class="lista" id="lista-vencidos"></ul>
+      </section>
+    </div>
 
-    <section id="seccion-recetas">
-      <h2>Recetas sugeridas</h2>
-      <div id="lista-recetas"></div>
+    <section class="panel" id="seccion-recetas" aria-labelledby="titulo-recetas">
+      <h2 id="titulo-recetas">Recetas sugeridas <span class="contador" id="contador-recetas"></span></h2>
+      <div class="recetas" id="lista-recetas"></div>
     </section>
   </main>
 
-  <!-- Lógica pura (constantes, nombres, fechas, conversiones, recetas). Probada con: node pruebas.js -->
+  <!-- Lógica pura (constantes, nombres, fechas, conversiones, validaciones, recetas). Probada con: node pruebas.js -->
   <script src="logica.js"></script>
   <script>
     /* ===================== Estado y persistencia ===================== */
@@ -139,29 +257,52 @@
       return el;
     }
 
-    function crearBoton(texto, accion, id) {
-      const b = crearTexto('button', texto);
+    function crearBoton(texto, accion, ing, clase) {
+      const b = crearTexto('button', texto, clase);
       b.type = 'button';
       b.dataset.accion = accion;
-      b.dataset.id = id;
+      b.dataset.id = ing.id;
+      b.setAttribute('aria-label', texto + ' ' + ing.nombre);
       return b;
     }
 
-    // Fila de ingrediente con sus botones Editar y Eliminar.
+    // Párrafo con un rótulo en negrita ("Usa:") y su texto.
+    function crearRenglon(clase, rotulo, texto) {
+      const p = document.createElement('p');
+      p.className = clase;
+      p.appendChild(crearTexto('span', rotulo + ' ', 'rotulo'));
+      p.appendChild(document.createTextNode(texto));
+      return p;
+    }
+
+    // Fila de ingrediente: nombre + etiqueta de estado (texto, no solo color), detalle y botones.
     function crearFila(ing) {
       const estado = estadoDe(ing);
       const li = document.createElement('li');
-      if (estado !== 'normal') li.className = estado;
+      li.className = 'ingrediente' + (estado !== 'normal' ? ' ' + estado : '') + (ing.id === editandoId ? ' editando' : '');
+
+      const info = document.createElement('div');
+      info.className = 'info';
+      const nombre = crearTexto('div', ing.nombre, 'nombre');
+      if (estado === 'proximo') nombre.appendChild(crearTexto('span', 'Próximo', 'etiqueta proximo'));
+      if (estado === 'vencido') nombre.appendChild(crearTexto('span', 'Vencido', 'etiqueta vencido'));
+      info.appendChild(nombre);
       const dias = diasPara(ing.vence);
-      const vence = Number.isFinite(dias) ? textoVence(dias) + ' (' + ing.vence + ')' : 'sin fecha';
-      li.appendChild(crearTexto('span', ing.nombre + ' — ' + ing.cantidad + ' ' + ing.unidad + ' — ' + vence));
-      li.appendChild(crearBoton('Editar', 'editar', ing.id));
-      li.appendChild(crearBoton('Eliminar', 'eliminar', ing.id));
+      const vence = Number.isFinite(dias) ? textoVence(dias) + ' · ' + formatoFecha(ing.vence) : 'sin fecha';
+      info.appendChild(crearTexto('div', formatoCantidad(ing.cantidad, ing.unidad) + ' · ' + vence, 'detalle'));
+      li.appendChild(info);
+
+      const acciones = document.createElement('div');
+      acciones.className = 'acciones';
+      acciones.appendChild(crearBoton('Editar', 'editar', ing, 'boton-chico'));
+      acciones.appendChild(crearBoton('Eliminar', 'eliminar', ing, 'boton-chico boton-peligro'));
+      li.appendChild(acciones);
       return li;
     }
 
-    function pintarLista(contenedor, filas, textoVacio) {
+    function pintarLista(contenedor, contador, filas, textoVacio) {
       contenedor.replaceChildren();
+      contador.textContent = filas.length;
       if (filas.length === 0) {
         contenedor.appendChild(crearTexto('li', textoVacio, 'vacio'));
         return;
@@ -172,38 +313,41 @@
     function pintarRecetas() {
       listaRecetas.replaceChildren();
       const sugeridas = sugerirRecetas(despensa, recetas);
+      document.getElementById('contador-recetas').textContent = sugeridas.length;
       if (sugeridas.length === 0) {
         listaRecetas.appendChild(crearTexto('p', 'No hay recetas con tus ingredientes disponibles.', 'vacio'));
         return;
       }
       for (const ev of sugeridas) {
         const tarjeta = document.createElement('article');
-        tarjeta.className = 'receta';
+        tarjeta.className = 'receta' + (ev.usaProximo ? ' urgente' : '');
         tarjeta.appendChild(crearTexto('h3', ev.receta.nombre));
         if (ev.usaProximo) {
-          tarjeta.appendChild(crearTexto('p',
-            'Aprovecha: ' + ev.urgente + ' (' + textoVence(ev.diasUrgente).toLowerCase() + ')', 'proximo'));
+          const p = document.createElement('p');
+          p.appendChild(crearTexto('span',
+            'Aprovecha: ' + ev.urgente + ' (' + textoVence(ev.diasUrgente).toLowerCase() + ')', 'aprovecha'));
+          tarjeta.appendChild(p);
         }
         // "Usa": en el orden de la receta; los que no alcanzan se muestran como "tomate 1 de 3 unidades".
         const usa = ev.receta.ingredientes.map(req => {
           const d = ev.disponibles.find(x => x.nombre === req.nombre);
-          if (d) return d.nombre + ' ' + d.cantidad + ' ' + d.unidad;
+          if (d) return d.nombre + ' ' + formatoCantidad(d.cantidad, d.unidad);
           const p = ev.parciales.find(x => x.nombre === req.nombre);
-          if (p) return p.nombre + ' ' + p.tiene + ' de ' + p.pide + ' ' + p.unidad;
+          if (p) return p.nombre + ' ' + p.tiene + ' de ' + formatoCantidad(p.pide, p.unidad);
           return null;
         }).filter(Boolean).join(', ');
-        tarjeta.appendChild(crearTexto('p', 'Usa: ' + usa));
-        const falta = ev.faltantes.map(f => f.nombre + ' (' + f.motivo + ')').join(', ') || 'nada';
-        tarjeta.appendChild(crearTexto('p', 'Te falta: ' + falta));
-        tarjeta.appendChild(crearTexto('p', 'Preparación: ' + ev.receta.preparacion));
+        tarjeta.appendChild(crearRenglon('usa', 'Usa:', usa));
+        const falta = ev.faltantes.map(f => f.nombre + ' (' + f.motivo + ')').join(', ');
+        tarjeta.appendChild(crearRenglon(falta ? 'falta' : 'falta nada', 'Te falta:', falta || 'nada'));
+        tarjeta.appendChild(crearRenglon('preparacion', 'Preparación:', ev.receta.preparacion));
         listaRecetas.appendChild(tarjeta);
       }
     }
 
     function render() {
       const { vigentes, vencidos } = separarVencidos(despensa);
-      pintarLista(listaDespensa, vigentes, 'No hay ingredientes.');
-      pintarLista(listaVencidos, vencidos, 'No hay ingredientes vencidos.');
+      pintarLista(listaDespensa, document.getElementById('contador-despensa'), vigentes, 'No hay ingredientes.');
+      pintarLista(listaVencidos, document.getElementById('contador-vencidos'), vencidos, 'No hay ingredientes vencidos.');
       pintarRecetas();
     }
 
@@ -216,6 +360,7 @@
     const campoFecha = document.getElementById('campo-fecha');
     const botonEnviar = document.getElementById('boton-enviar');
     const botonCancelar = document.getElementById('boton-cancelar');
+    const tituloFormulario = document.getElementById('titulo-formulario');
 
     let editandoId = null; // id del ingrediente que se está editando, o null si se está agregando
 
@@ -257,6 +402,7 @@
     function salirDeEdicion() {
       editandoId = null;
       botonEnviar.textContent = 'Agregar';
+      tituloFormulario.textContent = 'Agregar ingrediente';
       botonCancelar.hidden = true;
       form.reset();
       CAMPOS.forEach(limpiarError);
@@ -291,6 +437,7 @@
 
     botonCancelar.addEventListener('click', () => {
       salirDeEdicion();
+      render();
       campoNombre.focus();
     });
 
@@ -314,7 +461,9 @@
         campoUnidad.value = ing.unidad;
         campoFecha.value = ing.vence;
         botonEnviar.textContent = 'Guardar cambios';
+        tituloFormulario.textContent = 'Editar ingrediente';
         botonCancelar.hidden = false;
+        render(); // marca la fila que se está editando
         campoNombre.focus();
       }
     }
