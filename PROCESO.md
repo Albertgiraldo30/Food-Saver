@@ -1,6 +1,6 @@
 # Cómo trabajamos con los agentes
 
-Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persistencia) y 4 (Validaciones) de 5 terminadas.
+Proyecto: Food Saver. Estado: las 5 capas del PLAN están terminadas: 1 (Base), 2 (Vencidos y recetas), 3 (Persistencia), 4 (Validaciones) y 5 (Diseño).
 
 ## 1. Tarea delegada
 - Instrucción: al subagente `arquitecto` se le pidió el PLAN.md (5 capas, 240 minutos). Como CLAUDE.md aún no estaba guardado en disco, el encargo incluyó ENUNCIADO.md y el borrador completo de CLAUDE.md. CLAUDE.md se había llenado antes, con preguntas de opción múltiple a la usuaria, sin inventar datos. Ella decidió, entre otras cosas: las unidades, libra = 500 g, taza = 240 ml, cucharada = 15 ml, próximo a vencer = 0 a 5 días, cantidad mayor que 0 y hasta 10000 con decimales, vencidos en sección aparte, comparar nombre y cantidad, despensa precargada y 8 recetas propuestas por el agente y aprobadas por ella.
@@ -25,18 +25,41 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
   - En `index.html`: mensaje de error bajo cada campo, campo marcado en rojo, foco en el primer error y el error se borra al corregir. Con errores no se guarda ni se limpia el formulario. Cancelar y Editar limpian los errores. No hay `alert()`.
   - Documentación de la capa 3: se guardó en el commit 1a518b4.
 - Séptima tarea (ejecución de punta a punta, a pedido de la usuaria): el agente corrió las pruebas, tomó capturas en Chrome (inicio, errores y demo) y abrió la app en el Chrome de la usuaria.
-- Aún no hay diseño (capa 5).
+- Octava tarea (documentación de la capa 4): el agente principal revisó el borrador del documentador, verificó que no tuviera caracteres invisibles y aplicó PROCESO.md con ediciones puntuales. Commit a85f058.
+- Novena tarea (capa 5, diseño): el agente principal construyó el diseño en `index.html` y `logica.js`. Commits 22cf52a y 1bbc5ac. Produjo:
+  - Dos columnas desde 900 px (izquierda: formulario, despensa y vencidos; derecha: recetas) y una columna en celular. Encabezado verde y paneles con contadores (Despensa, Vencidos, Recetas).
+  - Estados que no dependen solo del color: etiqueta de texto "PRÓXIMO" (franja naranja) y "VENCIDO" (franja roja). La fila en edición se resalta y el título del formulario cambia a "Editar ingrediente".
+  - Recetas en tarjetas: "Aprovecha" resaltado, "Usa:" en verde, "Te falta:" en rojo (en verde si dice "nada") y "Preparación:".
+  - Formatos para mostrar en `logica.js` (formatoCantidad, nombreUnidad, formatoFecha): singular en cantidades ("1 unidad", "1 libra", "1 taza", "1 cucharada") y fechas DD/MM/AAAA. Solo cambia lo que se ve; lo guardado no cambia. Se añadieron 5 pruebas de formato.
+  - Letra de 17 px, botones con estilo y foco visible.
+  - Hallazgo 3 del revisor de la capa 4 resuelto: el mensaje de error quedó FUERA de la etiqueta del campo, para que el lector de pantalla no lo lea dos veces.
+- Las 5 capas del PLAN están terminadas.
 
 ## 2. Resultado refinado o rechazado
+
+### Capa 5: medición inválida a 375 px (detectada y rehecha por el agente)
+- Qué salió mal: para comprobar el celular, el agente midió la página con Chrome sin ventana a "375 px". Al revisar el dato vio que el ancho real era 485: Chrome sin ventana no baja de unos 485 px. La primera medición no era válida.
+- Cómo se corrigió: el agente no dio por buena esa medida. Cargó la app dentro de un marco (iframe) de 375 px que le envía las medidas. Resultado: 360 px útiles, 1 columna y ningún elemento sobresale. Con 1366 px la app muestra 2 columnas, y en ambos casos no hay desplazamiento horizontal.
+- Ajustes tras mirar las capturas (escritorio con la demo y celular con errores): el agente corrigió la alineación del encabezado y el margen del aviso en celular.
+
+### Capa 5: tres hallazgos BAJOS del revisor (corregidos)
+- [BAJO] El borde de los campos tenía contraste 2.17:1 y el anillo de foco 1.90:1, debajo del 3:1 que se pide para componentes. Se cambió el borde a #7d8a79 (3.63:1) y el foco a verde (5.12:1). Los valores se calcularon con un script.
+- [BAJO] La fila en edición se veía poco. Se agregó un contorno verde fuerte.
+- [BAJO] El contador de los paneles no tenía alto mínimo. Se corrigió.
+- Las tres correcciones están en el commit ae2d843. Después: `node pruebas.js` 79/79, los 11 escenarios de la capa 4 sin cambios y 0 errores de JavaScript.
+- Contraste de textos revisado por el revisor: todos de al menos 4.5:1. El más justo es "Aprovecha" (naranja sobre naranja claro), cerca de 4.7:1.
+
+### Documentación de la capa 5: dos frases desactualizadas
+- El borrador del `documentador` seguía diciendo que los hallazgos "sin validación aún" (capa 1) y "editar guarda datos inválidos" (capa 2) estaban pendientes. El agente principal lo detectó al revisar y los marcó como resueltos en la capa 4 antes de guardar.
 
 ### Capa 4: hallazgo MEDIO del revisor, "0.001" (corregido)
 - Qué salió mal: la cantidad "0.001" pasaba la validación (era mayor que 0). Al redondear a dos decimales se guardaba como 0, un valor que la regla prohíbe.
 - Cómo se corrigió: validarCantidad ahora rechaza lo que quedaría en 0 y muestra "La cantidad mínima es 0.01." Se añadieron 4 pruebas: 0.001 y 0.004 dan error, 0.005 se guarda como 0.01 y 0.01 es válido. Resultado: 74/74. Commit f12ceba.
 - Otros hallazgos del revisor en la capa 4, sin cambio de código:
   - [BAJO] ".5" y "2." se rechazan. Cumple el PLAN. Se preguntó a la usuaria si quiere aceptar ".5". PENDIENTE: sin respuesta.
-  - [BAJO] un lector de pantalla puede leer el error dos veces (el span está dentro del label). Se deja para la capa 5.
+  - [BAJO] un lector de pantalla podía leer el error dos veces (el span estaba dentro del label). Resuelto en la capa 5 (el mensaje quedó fuera de la etiqueta).
   - [BAJO] al editar puede quedar una fila igual a otra. Es la decisión 3 (al editar no se fusiona) y se deja así.
-- Observaciones propias para la capa 5, vistas en las capturas: "1 unidades" (falta el singular) y una sola columna con botones sin estilo.
+- Observaciones propias para la capa 5, vistas en las capturas: "1 unidades" (falta el singular) y una sola columna con botones sin estilo. Ambas resueltas en la capa 5.
 
 ### Capa 3: hallazgos MEDIOS del revisor (corregidos)
 - [MEDIO] Una receta guardada con unidad desconocida lanzaba un TypeError y dejaba la lista de recetas vacía. Se corrigió con la función recetaValida: si alguna receta guardada falla, se usan las predefinidas.
@@ -76,6 +99,20 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
 
 ## 3. Verificación
 
+### Capa 5
+- Pruebas automáticas: `node pruebas.js` pasó 79/79 (5 pruebas nuevas de formato). Tras las correcciones del revisor (commit ae2d843) sigue en 79/79.
+- Chrome sin ventana, hecho por el agente: los 11 escenarios de la capa 4 se repitieron con el nuevo HTML, con los mismos resultados y 0 errores de JavaScript.
+- Medidas de ancho, sin desplazamiento horizontal: 1366 px da 2 columnas; a 375 px (medido en un marco de 375 px, ver sección 2) da 360 px útiles, 1 columna y ningún elemento sobresale.
+- Capturas revisadas a ojo por el agente: escritorio con la demo y celular con errores. De ahí salieron dos ajustes (encabezado y margen del aviso).
+- Subagente `revisor` (capa 5): APTO PARA PRUEBAS, sin críticos ni altos y sin regresiones. Comprobó que todos los ids existen y que editar, cancelar, eliminar, errores y persistencia siguen coherentes. Contraste de textos: todos de al menos 4.5:1. Limitación: solo leyó el código, no ejecutó nada. Hallazgos BAJOS, todos CORREGIDOS en el commit ae2d843 (ver sección 2):
+  1. Borde de campos 2.17:1 y anillo de foco 1.90:1, debajo de 3:1.
+  2. Fila en edición poco visible.
+  3. Contador sin alto mínimo.
+- Tras corregir: 79/79 y los 11 escenarios sin cambios, 0 errores de JavaScript. No se volvió a llamar al revisor: NO VERIFICADO por un segundo revisor.
+- Sugerencias de prueba manual del revisor, NO realizadas: foco con Tab en proyector, nombre muy largo y flujo completo con F5. NO VERIFICADO.
+- Subagente `probador`: NO se ejecutó en la capa 5. NO VERIFICADO por el probador.
+- Pruebas manuales de la usuaria en el navegador: sin registro. NO VERIFICADO. Los escenarios fueron simulados por el agente en Chrome sin ventana.
+
 ### Capa 4
 - Pruebas automáticas: `node pruebas.js` pasó 70/70 tras construir la capa (17 pruebas nuevas de validación) y 74/74 tras la corrección del revisor (4 pruebas más).
 - 11 escenarios con clics simulados en el navegador, hechos por el agente. Se hicieron primero en Edge. Luego la usuaria pidió cambiar el navegador a Chrome y se repitieron todos en Chrome con el mismo resultado. También se repitió en Chrome la persistencia A a E de la capa 3. Escenarios:
@@ -91,11 +128,11 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
   10. Cancelar limpia los errores.
   11. Demo (aguacate hoy y limón ayer): la primera receta es "Ensalada de aguacate".
 - Resultado de los escenarios: 0 errores de JavaScript y 0 `alert(` en el código.
-- Capturas en Chrome (inicio, errores y demo), a pedido de la usuaria; el agente también abrió la app en el Chrome de ella. Confirmaron: errores en rojo bajo cada campo; en la demo el aguacate sube como "Vence hoy", el limón va a Vencidos y la primera receta es "Ensalada de aguacate" con "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (vencido)". También mostraron "1 unidades" y una sola columna con botones sin estilo (para la capa 5).
+- Capturas en Chrome (inicio, errores y demo), a pedido de la usuaria; el agente también abrió la app en el Chrome de ella. Confirmaron: errores en rojo bajo cada campo; en la demo el aguacate sube como "Vence hoy", el limón va a Vencidos y la primera receta es "Ensalada de aguacate" con "Aprovecha: aguacate (vence hoy)" y "Te falta: limón (vencido)". También mostraron "1 unidades" y una sola columna con botones sin estilo (resueltos en la capa 5).
 - Subagente `revisor` (capa 4): APTO PARA PRUEBAS, sin críticos ni altos y sin regresiones en las capas 1 a 3. Limitación: solo leyó el código, no ejecutó nada. Revisó sin hallar problema: "  2 ", "2.", "1,5,2", "1e5", "+5", "-0", años de menos de 4 dígitos, fecha parcial y editar con errores. Hallazgos:
   1. [MEDIO] "0.001" se guardaba como 0. CORREGIDO (ver sección 2, commit f12ceba).
   2. [BAJO] ".5" y "2." se rechazan. Cumple el PLAN. PENDIENTE: respuesta de la usuaria.
-  3. [BAJO] el lector de pantalla lee el error dos veces. Para la capa 5.
+  3. [BAJO] el lector de pantalla lee el error dos veces. CORREGIDO en la capa 5.
   4. [BAJO] al editar puede quedar una fila igual a otra. Decisión 3, se deja.
 - No se volvió a llamar al revisor tras la corrección del 0.001: NO VERIFICADO por un segundo revisor. La corrección sí se cubrió con las 4 pruebas nuevas (74/74).
 - Subagente `probador`: NO se ejecutó en la capa 4. NO VERIFICADO por el probador.
@@ -133,7 +170,7 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
 - Clics de Editar, Eliminar y Cancelar: no se pueden probar con ese método. Quedaron para prueba manual de la usuaria. No hay registro de su resultado: NO VERIFICADO. (En la capa 3, los clics de agregar, eliminar, editar y fusionar se simularon en una copia de la app, ver arriba.)
 - Subagente `revisor` (capa 2): APTO PARA PRUEBAS. Solo leyó index.html y PLAN.md, no CLAUDE.md (limitación de esa revisión). Hallazgos:
   1. [MEDIO] fusión con cantidad inválida dañaba la fila existente. CORREGIDO (ver sección 2).
-  2. [BAJO] editar guarda datos inválidos. Pendiente, capa 4.
+  2. [BAJO] editar guarda datos inválidos. Resuelto en la capa 4.
   3. [BAJO] "Aprovecha: tomate" junto a "no alcanza" parecía contradictorio. Llevó a la decisión 13. CORREGIDO.
   4. [BAJO] una pestaña abierta pasada la medianoche no actualiza los estados. No afecta la demo; no se cambió.
 - Subagente `probador`: NO se ejecutó en la capa 2 (la usuaria pasó directo al documentador). NO VERIFICADO por el probador.
@@ -145,7 +182,7 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
 - Subagente `probador`: NO VERIFICADO. No se ejecutó en la capa 1 por decisión de la usuaria, para ahorrar tiempo.
 - Se instaló la extensión Live Server en VS Code para probar el HTML en el navegador. No quedó registro de pruebas manuales en el navegador: NO VERIFICADO.
 - El revisor dio 5 hallazgos de gravedad BAJA:
-  1. Sin validación aún (capa 4). Pendiente.
+  1. Sin validación aún. Resuelto en la capa 4.
   2. render() tenía un return temprano que habría dejado secciones sin pintar al llegar la capa 2. Corregido.
   3. Limitación de plurales en medio del nombre. Pendiente.
   4. La expresión de tildes tenía caracteres invisibles literales en vez de un rango de marcas de tilde escrito como texto. Corregido. (Más tarde, en la separación, se reemplazó por la clase \p{M}.)
@@ -153,10 +190,17 @@ Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas), 3 (Persist
 - Cómo validamos la corrección: la primera corrección de las tildes no quedó aplicada, porque una edición posterior reescribió el archivo. El agente principal lo detectó revisando con grep, la reaplicó con un script y la verificó con grep y con Node.
 - Commits: db823d6 "Capa 1: base" y 3c5d1b4 "Capa 1: escape de tildes". No se volvió a llamar al revisor después de las correcciones: NO VERIFICADO por un segundo revisor.
 
+## Pendientes al cierre
+- Decisiones de la usuaria: ¿aceptar ".5"? y los extras P2 (crear o editar recetas, IA, integraciones), además de R8 "Cocinar esta receta".
+- Probador: no ejecutado en ninguna capa. NO VERIFICADO.
+- Pruebas manuales de la usuaria: sin registro. NO VERIFICADO.
+- Cierre según la GUIA: probar los pasos del README desde cero, confirmar el último commit y guardar una copia en USB o Drive. PENDIENTE.
+
 ## Bitácora por capa
 - Capa 1, Base: terminada. Revisor APTO PARA PRUEBAS. Probador no ejecutado. Commits db823d6 y 3c5d1b4.
 - Capa 2, Vencidos y recetas: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido). Pruebas Node 23/23 OK y Edge headless sobre la página real. Probador no ejecutado. Clics de Editar, Eliminar y Cancelar: NO VERIFICADO (prueba manual de la usuaria sin registro). Commits dfffb4b "Capa 2: vencidos, recetas sugeridas y actualizar ingredientes" y 6c26e16 "Capa 2: usar lo que hay cuando un ingrediente no alcanza", subidos a GitHub. Documentación guardada en el commit ef20ce9.
 - Separación de la lógica (logica.js y pruebas.js, pedida por la usuaria, decisión 14): hecha. Prueba de mutación: las pruebas detectan los errores introducidos. Commit 54dbb94.
 - Capa 3, Persistencia: terminada. Revisor APTO PARA PRUEBAS (2 hallazgos MEDIOS corregidos). Pruebas Node 53/53 y verificación de persistencia en Edge headless (A a E). Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits 8b23b19 y c0cee09.
-- Capa 4, Validaciones: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido; ".5" PENDIENTE de respuesta de la usuaria). Pruebas Node 74/74. 11 escenarios con clics simulados en Edge y repetidos en Chrome (con la persistencia A a E), 0 errores JS, 0 `alert(`. Capturas en Chrome. Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits c88e73e y f12ceba.
-- Capa 5, Diseño: PENDIENTE (incluye "1 unidades", columnas, botones y accesibilidad del error).
+- Capa 4, Validaciones: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido; ".5" PENDIENTE de respuesta de la usuaria). Pruebas Node 74/74. 11 escenarios con clics simulados en Edge y repetidos en Chrome (con la persistencia A a E), 0 errores JS, 0 `alert(`. Capturas en Chrome. Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits c88e73e y f12ceba. Documentación guardada en el commit a85f058.
+- Capa 5, Diseño: terminada. Commits 22cf52a y 1bbc5ac. Revisor APTO PARA PRUEBAS (3 hallazgos BAJOS de contraste, foco y edición, corregidos en el commit ae2d843; solo leyó código). Pruebas Node 79/79. Los 11 escenarios de la capa 4 repetidos en Chrome sin ventana, 0 errores JS. Sin desplazamiento horizontal a 1366 px (2 columnas) y a 375 px (1 columna, medido en un marco tras detectar una primera medición inválida de 485 px). Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO.
+- Las 5 capas del PLAN están terminadas. Falta el cierre (ver "Pendientes al cierre").

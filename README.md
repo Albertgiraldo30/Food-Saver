@@ -9,9 +9,11 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 - Capa 2, Vencidos y recetas: TERMINADA. Vencidos aparte, próximos destacados, recetas sugeridas, editar, eliminar y fusionar.
 - Capa 3, Persistencia con localStorage: TERMINADA. La despensa y las recetas se guardan y se recuperan al recargar.
 - Capa 4, Validaciones con errores junto al campo: TERMINADA. Ver sección "Validaciones".
-- Capa 5, Diseño: pendiente. Ver detalle en PLAN.md.
+- Capa 5, Diseño: TERMINADA. Ver sección "Diseño".
 
-## Qué se puede hacer hoy (capas 1 a 4)
+Las 5 capas del PLAN están terminadas. Quedan pendientes y limitaciones (ver al final).
+
+## Qué se puede hacer hoy (capas 1 a 5)
 - Ver la despensa precargada, ordenada por fecha de vencimiento (empate: por nombre).
 - Agregar un ingrediente con nombre, cantidad, unidad y fecha.
 - Unidades disponibles: unidades, g, kg, ml, l, tazas, cucharadas, libras.
@@ -23,6 +25,16 @@ Repositorio: https://github.com/Albertgiraldo30/Food-Saver (rama main)
 - Ver recetas sugeridas. Cada tarjeta muestra "Aprovecha:", "Usa:", "Te falta:" (con el motivo) y "Preparación:".
 - Recargar la página sin perder nada: se guardan la despensa y las recetas.
 - Ver errores de validación en rojo, bajo cada campo, al agregar o editar.
+
+## Diseño (capa 5)
+- Pantalla en dos columnas desde 900 px de ancho (izquierda: formulario, despensa y vencidos; derecha: recetas). En celular, una sola columna.
+- Encabezado verde. Los paneles muestran contadores (Despensa, Vencidos, Recetas).
+- El estado no depende solo del color: los próximos llevan la etiqueta de texto "PRÓXIMO" (franja naranja) y los vencidos "VENCIDO" (franja roja).
+- La fila que se edita se resalta con un contorno verde y el título del formulario cambia a "Editar ingrediente".
+- Las recetas son tarjetas: "Aprovecha" resaltado, "Usa:" en verde, "Te falta:" en rojo (en verde si dice "nada") y "Preparación:".
+- Formatos para mostrar: singular en cantidades ("1 unidad", "1 libra", "1 taza", "1 cucharada") y fechas DD/MM/AAAA. Es solo la presentación: lo que se guarda no cambia.
+- Letra de 17 px, botones con estilo y foco visible con el teclado. Bordes de campos y anillo de foco con contraste de al menos 3:1.
+- El mensaje de error de cada campo está fuera de su etiqueta, para que un lector de pantalla no lo lea dos veces.
 
 ## Validaciones (capa 4)
 Se aplican al agregar y al editar. Los errores salen bajo el campo, nunca con `alert()`.
@@ -69,8 +81,8 @@ Ejemplos de mensajes:
 5. Recarga con F5: todo sigue ahí.
 
 ## Todavía NO existe
-- Diseño de la capa 5 (estilos, singular/plural, distribución de la pantalla).
 - Botón "Cocinar esta receta" (R8, opcional, P2).
+- Extras opcionales P2: crear o editar recetas, IA e integraciones. Pendiente de decisión de la usuaria.
 
 ## Requisitos
 - Un navegador moderno (Chrome, Edge o Firefox).
@@ -80,7 +92,7 @@ Ejemplos de mensajes:
 
 ## Estructura de archivos
 - `index.html`: la pantalla (HTML, CSS y JavaScript del DOM), los errores de validación y la persistencia con localStorage.
-- `logica.js`: constantes y funciones puras (sin DOM ni localStorage), incluidas las validaciones. Se carga desde `index.html` con un `<script src>` normal, por eso funciona con doble clic. También se puede usar desde Node.
+- `logica.js`: constantes y funciones puras (sin DOM ni localStorage), incluidas las validaciones y los formatos para mostrar (formatoCantidad, nombreUnidad, formatoFecha). Se carga desde `index.html` con un `<script src>` normal, por eso funciona con doble clic. También se puede usar desde Node.
 - `pruebas.js`: pruebas de `logica.js`.
 - `PLAN.md`, `PROCESO.md`, `CLAUDE.md`, `ENUNCIADO.md`: plan, evidencias del proceso y reglas del proyecto.
 
@@ -101,7 +113,7 @@ Aviso: al abrir con doble clic (`file://`) y con Live Server (`http://127.0.0.1`
 ## Cómo correr las pruebas
 1. Abre una terminal (PowerShell o CMD) en la carpeta del proyecto.
 2. Ejecuta: `node pruebas.js`
-3. Debe terminar sin fallas. El último resultado registrado fue 74/74 pruebas OK.
+3. Debe terminar sin fallas. El último resultado registrado fue 79/79 pruebas OK.
 
 ## Cómo usarlo ahora
 1. Revisa la despensa de ejemplo, los vencidos y las recetas sugeridas.
@@ -117,7 +129,7 @@ Aviso: al abrir con doble clic (`file://`) y con Live Server (`http://127.0.0.1`
 
 ## Datos de ejemplo (ficticios)
 Se cargan con fechas relativas al día en que se abre la app por primera vez:
-queso 200 g (ya vencido, ayer), tomate 4 unidades (+1 día), leche 1 l (+2), pechuga de pollo 1 libras (+2), banano 3 unidades (+3), cebolla 3 unidades (+7), huevo 12 unidades (+10), papa 6 unidades (+14), pasta 500 g (+90), aceite 1 l (+120), arroz 1 kg (+180).
+queso 200 g (ya vencido, ayer), tomate 4 unidades (+1 día), leche 1 l (+2), pechuga de pollo 1 libra (+2), banano 3 unidades (+3), cebolla 3 unidades (+7), huevo 12 unidades (+10), papa 6 unidades (+14), pasta 500 g (+90), aceite 1 l (+120), arroz 1 kg (+180).
 
 ## Reglas de comparación y conversión
 - Los nombres ignoran mayúsculas, tildes, espacios extra y la "s" o "es" final: "Limones" = "limón".
@@ -126,13 +138,11 @@ queso 200 g (ya vencido, ayer), tomate 4 unidades (+1 día), leche 1 l (+2), pec
 ## Limitaciones conocidas
 - Las cantidades ".5" y "2." se rechazan (hay que escribir "0.5" y "2"). Cumple el PLAN. Se preguntó a la usuaria si quiere aceptar ".5": sin respuesta, PENDIENTE.
 - Al editar, una fila puede quedar igual a otra (mismo nombre, unidad y fecha), porque editar no fusiona. Es una decisión del proyecto.
-- Falta el singular en el texto: se ve "1 unidades". Queda para la capa 5.
-- Accesibilidad: un lector de pantalla puede leer el mensaje de error dos veces (el mensaje está dentro de la etiqueta del campo). Queda para la capa 5.
-- Diseño básico: una sola columna y botones sin estilo. Queda para la capa 5.
 - Las recetas guardadas ocultan cambios hechos en el código. Para verlos hay que borrar `foodsaver.v1`.
 - Si dos ingredientes guardados tuvieran el mismo id (solo por edición manual de localStorage) o se usan dos pestañas a la vez, no hay control: la última que guarda gana. No se cambió.
 - Solo se quita el plural al final del nombre completo. "Pechugas de pollo" no se reconoce como "pechuga de pollo".
 - Si la pestaña queda abierta pasada la medianoche, los estados (vence hoy, vencido) no se actualizan hasta recargar.
 - Como una receta puede usar solo parte de un ingrediente, si más adelante se hace el botón "Cocinar" (R8) habrá que decidir su regla. NO decidido.
-- Las pruebas manuales de la usuaria en el navegador (Editar, Eliminar, Cancelar y la persistencia a mano) no tienen registro: NO VERIFICADO (ver PROCESO.md). La capa 4 se probó con clics simulados por el agente, no por la usuaria.
-- El probador no se ejecutó en las capas 1, 2, 3 ni 4 (ver PROCESO.md).
+- Diseño (capa 5): la revisión fue solo de código y las medidas se hicieron en Chrome sin ventana. Nadie lo ha probado a mano en un proyector, con un nombre muy largo ni con el flujo completo y F5. NO VERIFICADO en prueba manual.
+- Las pruebas manuales de la usuaria en el navegador (Editar, Eliminar, Cancelar y la persistencia a mano) no tienen registro: NO VERIFICADO (ver PROCESO.md). Las capas 4 y 5 se probaron con clics simulados por el agente, no por la usuaria.
+- El probador no se ejecutó en ninguna capa (ver PROCESO.md).
