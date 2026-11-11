@@ -1,6 +1,6 @@
 # Cómo trabajamos con los agentes
 
-Proyecto: Food Saver. Estado: capas 1 (Base) y 2 (Vencidos y recetas) de 5 terminadas.
+Proyecto: Food Saver. Estado: capas 1 (Base), 2 (Vencidos y recetas) y 3 (Persistencia) de 5 terminadas.
 
 ## 1. Tarea delegada
 - Instrucción: al subagente `arquitecto` se le pidió el PLAN.md (5 capas, 240 minutos). Como CLAUDE.md aún no estaba guardado en disco, el encargo incluyó ENUNCIADO.md y el borrador completo de CLAUDE.md. CLAUDE.md se había llenado antes, con preguntas de opción múltiple a la usuaria, sin inventar datos. Ella decidió, entre otras cosas: las unidades, libra = 500 g, taza = 240 ml, cucharada = 15 ml, próximo a vencer = 0 a 5 días, cantidad mayor que 0 y hasta 10000 con decimales, vencidos en sección aparte, comparar nombre y cantidad, despensa precargada y 8 recetas propuestas por el agente y aprobadas por ella.
@@ -10,11 +10,33 @@ Proyecto: Food Saver. Estado: capas 1 (Base) y 2 (Vencidos y recetas) de 5 termi
   - 2A: vencidos en sección aparte, en rojo; próximos (0 a 5 días) destacados en naranja; textos "Vence hoy / mañana / en N días" y "Venció ayer / hace N días".
   - 2B: las funciones evaluarReceta y sugerirRecetas. Suman todas las filas no vencidas del ingrediente con conversión de unidades. Orden: usa algo próximo a vencer, menos días, menos faltantes, orden original. La tarjeta muestra "Aprovecha:", "Usa:", "Te falta:" (con motivo: "no está", "vencido", "unidad no compatible") y "Preparación:". El motivo del faltante estaba como P2 y el agente lo adelantó; se informó a la usuaria.
   - 2C: editar (reusa el formulario, botones "Guardar cambios" y "Cancelar", nunca fusiona), eliminar (también en Vencidos) y fusionar al agregar solo con mismo nombre, tipo de unidad y fecha.
-- Aún no hay persistencia (capa 3) ni validaciones (capa 4).
+- Cuarta tarea (separación de la lógica): la usuaria pidió crear `logica.js` con las funciones puras, `pruebas.js` con los 23 casos (ejecutable con `node pruebas.js`) e `index.html` usando `logica.js`. Eso cambió la regla de stack de CLAUDE.md ("un solo index.html") por decisión de la usuaria (decisión 14 de PLAN.md). El agente:
+  - Movió las constantes y las funciones puras a `logica.js`, y sumó validarCantidad, convertir, separarVencidos, faltantesDe, serializar y deserializar. Se carga con un `<script src>` normal (funciona con doble clic) y exporta para Node.
+  - Para quitar tildes usó la clase Unicode de marcas (\p{M}) en lugar del rango anterior, para evitar de nuevo los caracteres invisibles.
+  - Verificó con un script que UNIDADES, RECETAS, SEMILLA y CLAVE de `logica.js` son idénticas a las que tenía `index.html`.
+  - Escribió `pruebas.js` con los 23 casos originales más casos nuevos: validarCantidad (vacío, 0, -3, abc, 1e3 y 10001 dan error; 10000, 0.5 y "1,5" son válidos), convertir, separar vencidos, faltantesDe y persistencia.
+  - Commit 54dbb94.
+- Quinta tarea (capa 3, persistencia): pedido de la usuaria: guardar la despensa Y las recetas (decisión 15). El agente principal construyó:
+  - cargar(): sin clave carga la semilla y la guarda; con datos dañados muestra aviso en pantalla y usa la semilla; sin localStorage muestra aviso y sigue en memoria.
+  - guardar() tras agregar, editar, eliminar y fusionar. Clave `foodsaver.v1`.
+  - Commit 8b23b19.
+- Aún no hay validaciones (capa 4).
 
 ## 2. Resultado refinado o rechazado
 
-### Ejemplo más claro (capa 2): "usar lo que hay"
+### Capa 3: hallazgos MEDIOS del revisor (corregidos)
+- [MEDIO] Una receta guardada con unidad desconocida lanzaba un TypeError y dejaba la lista de recetas vacía. Se corrigió con la función recetaValida: si alguna receta guardada falla, se usan las predefinidas.
+- [MEDIO] Las filas guardadas con cantidad, unidad o fecha inválidas se recargaban mostrando "null undefined". Se corrigió: esas filas se descartan con el aviso "Se descartaron N ingrediente(s)…" y se limpia lo guardado.
+- Otros hallazgos del revisor, sin cambio de código o menores: las recetas guardadas ocultan cambios del código (documentado en PLAN: borrar `foodsaver.v1`); la sección 4 de PLAN estaba desactualizada (corregida); ids duplicados y dos pestañas a la vez no se cambian porque requieren edición manual.
+- Las correcciones se publicaron en el commit c0cee09.
+
+### Documentación de la capa 2: el documentador volvió a introducir caracteres invisibles
+- Qué salió mal: el borrador del `documentador` para la capa 2 volvió a escribir la expresión de tildes con caracteres invisibles. Es el mismo error del hallazgo 4 de la capa 1.
+- Cómo se corrigió: el agente principal lo detectó al revisar el texto, lo corrigió y verificó con un script que ningún archivo tuviera esos caracteres antes del commit ef20ce9, donde se guardó la documentación de la capa 2.
+- Prevención: en el código, `logica.js` ya usa la clase \p{M} en lugar de un rango de caracteres, y el encargo al documentador prohíbe escribir ese rango.
+- En la documentación de la capa 3, el agente principal también corrigió un título que atribuía este hecho a la capa 3.
+
+### Capa 2: "usar lo que hay"
 - Qué salió mal: el revisor señaló que una tarjeta mostraba "Aprovecha: tomate" junto a "tomate no alcanza". Parecía contradictorio.
 - Pedido de la usuaria: "cuando el ingrediente no alcanza, ajustar la receta con los demás ingredientes".
 - Qué hizo el agente: la frase era ambigua y NO la implementó directo. Le preguntó con dos opciones y una vista previa: (a) reducir toda la receta proporcionalmente o (b) usar lo que hay.
@@ -27,8 +49,8 @@ Proyecto: Food Saver. Estado: capas 1 (Base) y 2 (Vencidos y recetas) de 5 termi
 ### Otro hallazgo del revisor en la capa 2 (corregido)
 - [MEDIO] agregarIngrediente con cantidad inválida (texto da NaN, o negativa) fusionaba y dañaba la fila existente. Se corrigió: solo fusiona si la fila nueva es válida. Se añadió una prueba de regresión y el tomate original queda intacto.
 
-### Revisión de la documentación (capa 2)
-- El borrador del `documentador` para la capa 2 volvió a escribir la expresión de tildes con caracteres invisibles (el mismo error del hallazgo 4 de la capa 1). El agente principal lo detectó al revisar el texto, lo corrigió con un script y lo verificó con grep antes del commit.
+### Observación de la usuaria en la capa 3: el nombre no se exige
+- La usuaria notó que el formulario no exige el nombre. El agente explicó que todas las validaciones son de la capa 4 (la siguiente). Hoy una fila sin nombre se agrega y se descarta al recargar, con aviso. Queda pendiente para la capa 4.
 
 ### Capa 1
 - Qué produjo el agente: el subagente `arquitecto` propuso el PLAN.md con decisiones provisionales: (a) al agregar un ingrediente repetido con fecha distinta, fusionarlo y quedarse con la fecha más próxima; (b) un ingrediente que no alcanza la cantidad no cuenta para mostrar la receta ni para su urgencia; (c) el tope de 10000 solo aplica a lo que se escribe, no al total sumado.
@@ -40,13 +62,36 @@ Proyecto: Food Saver. Estado: capas 1 (Base) y 2 (Vencidos y recetas) de 5 termi
 
 ## 3. Verificación
 
+### Capa 3 y separación de la lógica
+- Prueba de mutación (separación): en una copia de `logica.js` con libra = 453 g y "próximo" = 4 días fallaron exactamente esas 2 pruebas. Conclusión: las pruebas sí detectan errores.
+- Pruebas automáticas: `node pruebas.js` pasó 53/53 tras las correcciones del revisor.
+- Constantes: un script confirmó que UNIDADES, RECETAS, SEMILLA y CLAVE de `logica.js` son idénticas a las que tenía `index.html`.
+- Separación en Edge headless: la página se ve igual que antes (commit 54dbb94).
+- Persistencia en Edge headless, con perfil persistente (commit 8b23b19):
+  - (A) Primera vez: se guardan 11 ingredientes y 8 recetas.
+  - (B) Copia de la app con clics simulados (agregar Mango, eliminar Arroz, editar Leche a 3, sumar 2 a "Tomates"): lo guardado refleja los 4 cambios.
+  - (C) Recargar la app real: todo sigue.
+  - (D) Despensa vacía guardada: sigue vacía, el ejemplo no reaparece.
+  - (E) Valor guardado `{`: aparece el aviso, se carga el ejemplo y los datos quedan reparados.
+- Problema durante la verificación: Edge no podía abrir los archivos auxiliares que el agente creó con su herramienta de escritura en la carpeta temporal (error ERR_FILE_NOT_FOUND). El agente lo investigó (icacls) y lo resolvió copiando los archivos desde la terminal. También corrigió su propio script de prueba, porque `cut` no acepta el guion largo como separador.
+- Subagente `revisor` (capa 3): APTO PARA PRUEBAS, sin críticos ni altos, y sin diferencias de comportamiento por la separación. Limitación: solo leyó el código, no ejecutó nada. Hallazgos:
+  1. [MEDIO] receta guardada con unidad desconocida. CORREGIDO (ver sección 2).
+  2. [MEDIO] filas guardadas inválidas mostraban "null undefined". CORREGIDO (ver sección 2).
+  3. [BAJO] recetas guardadas ocultan cambios del código. Documentado en PLAN.
+  4. [BAJO] PLAN sección 4 desactualizada. CORREGIDO.
+  5. [BAJO] ids duplicados y dos pestañas. No se cambia (requiere edición manual).
+- Verificación de las correcciones (commit c0cee09): 53/53 pruebas. Con el escenario exacto del revisor (una fila sin cantidad y una receta con unidad "zz") en Edge: aparece el aviso, queda solo la fila válida, vuelven las 8 recetas, hay 0 errores en la consola y localStorage queda reparado.
+- No se volvió a llamar al revisor tras estas correcciones: NO VERIFICADO por un segundo revisor.
+- Subagente `probador`: NO se ejecutó en esta etapa. NO VERIFICADO por el probador.
+- Pruebas manuales de la usuaria en el navegador (persistencia incluida): sin registro. NO VERIFICADO.
+
 ### Capa 2
 - Pruebas del agente principal: un script Node con 22 comprobaciones, 22/22 OK. Luego se añadió la prueba de regresión del revisor: 23/23 OK. Después del cambio "usar lo que hay", las pruebas se ajustaron y siguen en 23/23 OK.
   - El orden de recetas con la despensa de ejemplo coincide exactamente con la tabla del PLAN.
   - Flujo demo (aguacate hoy + limón ayer): la primera receta es "Ensalada de aguacate" con falta "limón (vencido)".
   - Fusiones, conversiones (tazas, cucharadas) y estados en los límites (hoy, +5, +6, −1) correctos.
 - Edge headless (`--dump-dom`) sobre la página real: el queso aparece solo en Vencidos, hay 4 próximos con class="proximo" y las tarjetas son correctas. No hay `alert(`, `innerHTML` ni `http` en el código.
-- Clics de Editar, Eliminar y Cancelar: no se pueden probar con ese método. Quedaron para prueba manual de la usuaria. No hay registro de su resultado: NO VERIFICADO.
+- Clics de Editar, Eliminar y Cancelar: no se pueden probar con ese método. Quedaron para prueba manual de la usuaria. No hay registro de su resultado: NO VERIFICADO. (En la capa 3, los clics de agregar, eliminar, editar y fusionar se simularon en una copia de la app, ver arriba.)
 - Subagente `revisor` (capa 2): APTO PARA PRUEBAS. Solo leyó index.html y PLAN.md, no CLAUDE.md (limitación de esa revisión). Hallazgos:
   1. [MEDIO] fusión con cantidad inválida dañaba la fila existente. CORREGIDO (ver sección 2).
   2. [BAJO] editar guarda datos inválidos. Pendiente, capa 4.
@@ -64,14 +109,15 @@ Proyecto: Food Saver. Estado: capas 1 (Base) y 2 (Vencidos y recetas) de 5 termi
   1. Sin validación aún (capa 4). Pendiente.
   2. render() tenía un return temprano que habría dejado secciones sin pintar al llegar la capa 2. Corregido.
   3. Limitación de plurales en medio del nombre. Pendiente.
-  4. La expresión de tildes tenía caracteres invisibles literales en vez del rango escrito como texto (barra-u 0300 a barra-u 036f). Corregido.
+  4. La expresión de tildes tenía caracteres invisibles literales en vez de un rango de marcas de tilde escrito como texto. Corregido. (Más tarde, en la separación, se reemplazó por la clase \p{M}.)
   5. Fecha mostrada en crudo. Corregido en la capa 2A (textos "Vence hoy", "Venció ayer", etc.).
 - Cómo validamos la corrección: la primera corrección de las tildes no quedó aplicada, porque una edición posterior reescribió el archivo. El agente principal lo detectó revisando con grep, la reaplicó con un script y la verificó con grep y con Node.
 - Commits: db823d6 "Capa 1: base" y 3c5d1b4 "Capa 1: escape de tildes". No se volvió a llamar al revisor después de las correcciones: NO VERIFICADO por un segundo revisor.
 
 ## Bitácora por capa
 - Capa 1, Base: terminada. Revisor APTO PARA PRUEBAS. Probador no ejecutado. Commits db823d6 y 3c5d1b4.
-- Capa 2, Vencidos y recetas: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido). Pruebas Node 23/23 OK y Edge headless sobre la página real. Probador no ejecutado. Clics de Editar, Eliminar y Cancelar: NO VERIFICADO (prueba manual de la usuaria sin registro). Commits dfffb4b "Capa 2: vencidos, recetas sugeridas y actualizar ingredientes" y 6c26e16 "Capa 2: usar lo que hay cuando un ingrediente no alcanza", subidos a GitHub.
-- Capa 3, Persistencia: PENDIENTE.
-- Capa 4, Validaciones: PENDIENTE.
+- Capa 2, Vencidos y recetas: terminada. Revisor APTO PARA PRUEBAS (1 hallazgo MEDIO corregido). Pruebas Node 23/23 OK y Edge headless sobre la página real. Probador no ejecutado. Clics de Editar, Eliminar y Cancelar: NO VERIFICADO (prueba manual de la usuaria sin registro). Commits dfffb4b "Capa 2: vencidos, recetas sugeridas y actualizar ingredientes" y 6c26e16 "Capa 2: usar lo que hay cuando un ingrediente no alcanza", subidos a GitHub. Documentación guardada en el commit ef20ce9.
+- Separación de la lógica (logica.js y pruebas.js, pedida por la usuaria, decisión 14): hecha. Prueba de mutación: las pruebas detectan los errores introducidos. Commit 54dbb94.
+- Capa 3, Persistencia: terminada. Revisor APTO PARA PRUEBAS (2 hallazgos MEDIOS corregidos). Pruebas Node 53/53 y verificación de persistencia en Edge headless (A a E). Probador no ejecutado. Pruebas manuales de la usuaria: NO VERIFICADO. Commits 8b23b19 y c0cee09.
+- Capa 4, Validaciones: PENDIENTE (incluye exigir el nombre).
 - Capa 5, Diseño: PENDIENTE.
