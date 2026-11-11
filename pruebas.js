@@ -157,6 +157,16 @@ check('1 tazas => "1 taza", 1 cucharadas => "1 cucharada", 1 libras => "1 libra"
 check('1.5 kg y 1 l no cambian', L.formatoCantidad(1.5, 'kg') === '1.5 kg' && L.formatoCantidad(1, 'l') === '1 l');
 check('fecha 2026-11-12 => 12/11/2026', L.formatoFecha('2026-11-12') === '12/11/2026');
 
+seccion('Restaurar datos de ejemplo (crearSemilla)');
+const restaurada = L.crearSemilla();
+check('restaurar => 11 ingredientes con ids distintos', restaurada.length === 11 &&
+  new Set(restaurada.map(i => i.id)).size === 11);
+check('restaurar => fechas relativas a hoy (Tomate mañana, Queso ayer)',
+  restaurada.find(i => i.nombre === 'Tomate').vence === sumarDias(hoyISO(), 1) &&
+  restaurada.find(i => i.nombre === 'Queso').vence === sumarDias(hoyISO(), -1));
+check('restaurar => todas las filas son válidas al guardar y leer',
+  L.deserializar(L.serializar(restaurada, L.RECETAS)).descartados === 0);
+
 seccion('convertir');
 check('1 kg = 1000 g', L.convertir(1, 'kg', 'g') === 1000);
 check('1 libra = 500 g', L.convertir(1, 'libras', 'g') === 500);

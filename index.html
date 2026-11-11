@@ -124,6 +124,19 @@
     .falta.nada .rotulo { color: var(--verde); }
     .preparacion { color: var(--suave); }
 
+    /* Confirmación en la página */
+    .pie-panel { margin-top: 12px; display: flex; justify-content: flex-end; }
+    .confirmacion {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10;
+    }
+    .confirmacion[hidden] { display: none; }
+    .caja-confirmacion {
+      background: #fff; border-radius: var(--radio); padding: 20px; max-width: 420px; width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+    .caja-confirmacion p { margin: 0 0 16px; font-weight: 600; }
+
     /* Oculto visualmente pero legible por lectores de pantalla */
     .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
@@ -136,6 +149,17 @@
     </div>
     <p id="aviso" class="aviso" role="status" hidden></p>
   </header>
+
+  <!-- Confirmación dentro de la página (sin ventanas emergentes del navegador). -->
+  <div id="confirmacion" class="confirmacion" role="alertdialog" aria-modal="true" aria-labelledby="texto-confirmacion" hidden>
+    <div class="caja-confirmacion">
+      <p id="texto-confirmacion"></p>
+      <div class="acciones-form">
+        <button type="button" id="boton-confirmar-si" class="boton"></button>
+        <button type="button" id="boton-confirmar-no" class="boton-secundario">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <main class="tablero">
     <div class="columna">
@@ -177,6 +201,9 @@
       <section class="panel" id="seccion-despensa" aria-labelledby="titulo-despensa">
         <h2 id="titulo-despensa">Despensa <span class="contador" id="contador-despensa"></span></h2>
         <ul class="lista" id="lista-despensa"></ul>
+        <div class="pie-panel">
+          <button type="button" id="boton-restaurar" class="boton-secundario">Restaurar datos de ejemplo</button>
+        </div>
       </section>
 
       <section class="panel" id="seccion-vencidos" aria-labelledby="titulo-vencidos">
@@ -469,6 +496,56 @@
     }
     listaDespensa.addEventListener('click', alHacerClicEnLista);
     listaVencidos.addEventListener('click', alHacerClicEnLista);
+
+    /* ===================== Confirmación en la página ===================== */
+
+    const confirmacion = document.getElementById('confirmacion');
+    const textoConfirmacion = document.getElementById('texto-confirmacion');
+    const botonConfirmarSi = document.getElementById('boton-confirmar-si');
+    const botonConfirmarNo = document.getElementById('boton-confirmar-no');
+    let alConfirmar = null;      // acción pendiente
+    let focoAnterior = null;     // elemento al que vuelve el foco al cerrar
+
+    // Muestra la caja de confirmación; si la persona dice que sí, ejecuta "accion".
+    function pedirConfirmacion(texto, textoBotonSi, accion) {
+      focoAnterior = document.activeElement;
+      textoConfirmacion.textContent = texto;
+      botonConfirmarSi.textContent = textoBotonSi;
+      alConfirmar = accion;
+      confirmacion.hidden = false;
+      botonConfirmarNo.focus(); // la opción segura queda enfocada
+    }
+
+    function cerrarConfirmacion() {
+      confirmacion.hidden = true;
+      alConfirmar = null;
+      if (focoAnterior && document.contains(focoAnterior)) focoAnterior.focus();
+    }
+
+    botonConfirmarSi.addEventListener('click', () => {
+      const accion = alConfirmar;
+      cerrarConfirmacion();
+      if (accion) accion();
+    });
+    botonConfirmarNo.addEventListener('click', cerrarConfirmacion);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !confirmacion.hidden) cerrarConfirmacion();
+    });
+
+    // Restaurar la despensa de ejemplo (fechas relativas a hoy) y las recetas predefinidas.
+    document.getElementById('boton-restaurar').addEventListener('click', () => {
+      pedirConfirmacion(
+        'Se borrarán todos tus ingredientes y se cargará la despensa de ejemplo. ¿Continuar?',
+        'Sí, restaurar',
+        () => {
+          despensa = crearSemilla();
+          recetas = RECETAS;
+          guardar();
+          salirDeEdicion();
+          aviso.hidden = true;
+          render();
+        });
+    });
 
     /* ===================== Inicio ===================== */
 
